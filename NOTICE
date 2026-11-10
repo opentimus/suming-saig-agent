@@ -1,0 +1,24 @@
+鲸小武（Jing Xiaowu）数命SPU城市AI接待员专家包
+Copyright (C) 2026 武汉海辞科技有限公司
+
+本项目全部内容（包括 Agent 定义、Skill 文档与脚本、参考文档、插件配置和头像
+资源）均依据 GNU General Public License 第 3 版授权，许可证全文见项目根目录的
+LICENSE 文件。
+
+SPDX-License-Identifier: GPL-3.0-only
+
+署名 / Attribution
+------------------
+版权归属与署名为：武汉海辞科技有限公司。
+
+你可以复制、修改和再分发本项目（原作或衍生作品），但须遵守 GPL-3.0：
+保留本版权与署名声明及许可证声明，以 GPL-3.0 同一协议授权整个衍生作品，
+并提供相应源代码。本项目按"现状"提供，不含任何担保，详见 LICENSE 第 15、16 节。
+
+Jing Xiaowu (Shuming SPU City AI Receptionist) expert package
+Copyright (C) 2026 Wuhan Haici Technology Co., Ltd.
+
+Licensed under the GNU General Public License, version 3 (GPL-3.0-only).
+See the LICENSE file for the full license text. When redistributing this
+project or derivative works, retain this copyright/attribution notice and
+the license notice, and license the whole derivative work under GPL-3.0.
