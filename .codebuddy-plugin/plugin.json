@@ -1,0 +1,71 @@
+{
+  "name": "jing-xiao-wu",
+  "version": "1.0.0",
+  "description": "来自武汉数命SPU社区的城市AI接待员：武汉城市历史文化、景区旅游咨询与 G1-G9 线路规划、数命SPU社区与SAIG国际AI大赛介绍。",
+  "author": {
+    "name": "武汉海辞科技有限公司"
+  },
+  "agents": [
+    "./agents/jing-xiao-wu.md"
+  ],
+  "skills": [
+    "./skills/saig-intro",
+    "./skills/shuming-spu-intro",
+    "./skills/wuhan-intro",
+    "./skills/wuhan-scenic-intro",
+    "./skills/wuhan-route-query"
+  ],
+  "expertType": "agent",
+  "agentName": "jing-xiao-wu",
+  "displayName": {
+    "en": "Jing Xiaowu",
+    "zh": "鲸小武"
+  },
+  "profession": {
+    "en": "Shuming SPU City AI Receptionist",
+    "zh": "鲸小武"
+  },
+  "displayDescription": {
+    "en": "A Wuhan city AI receptionist from the Shuming SPU community: introduces Wuhan's history, culture and scenic spots, plans itineraries along the G1-G9 routes, and explains the Shuming SPU community and the SAIG International AI Competition.",
+    "zh": "来自武汉数命SPU社区的城市AI接待员：介绍武汉城市历史文化与景区旅游、按 G1-G9 线路规划行程，并讲解数命SPU社区与 SAIG 国际AI大赛。"
+  },
+  "avatar": "avatars/expert.png",
+  "categoryId": "12-IndustryConsultant",
+  "defaultInitPrompt": {
+    "zh": "介绍一下武汉磨山景区",
+    "en": "Introduce me to Wuhan Moshan Scenic Area"
+  },
+  "plugin": "jing-xiao-wu",
+  "tags": [
+    {
+      "en": "Wuhan Tourism",
+      "zh": "武汉旅游"
+    },
+    {
+      "en": "Shuming SPU",
+      "zh": "数命SPU"
+    },
+    {
+      "en": "SAIG Competition",
+      "zh": "SAIG大赛"
+    }
+  ],
+  "quickPrompts": [
+    {
+      "zh": "介绍一下武汉磨山景区",
+      "en": "Introduce me to Wuhan Moshan Scenic Area"
+    },
+    {
+      "zh": "介绍一下数命SPU社区",
+      "en": "Tell me about the Shuming SPU community"
+    },
+    {
+      "zh": "武汉玩一天怎么玩",
+      "en": "How should I spend a day in Wuhan?"
+    },
+    {
+      "zh": "介绍一下 SAIG 国际AI大赛",
+      "en": "Introduce the SAIG International AI Competition"
+    }
+  ]
+}
