@@ -2,9 +2,9 @@
 name: wuhan-scenic-intro
 display_name: 武汉景区介绍
 display_name_en: Wuhan Scenic Spots Intro
-description: 武汉旅游咨询的默认承接技能。除两类情况外——武汉城市基本历史与地情信息（→ wuhan-intro）、需要生成结构化行程单（→ wuhan-route-query）——用户在武汉游玩相关的咨询类问题统一由本技能处理，包括景点详情、看点玩法、季节与主题推荐、景点对比取舍、讲解词与打卡清单、景点所属 G1-G9 线路等。答案来自内置的 G1-G9 路线概览文件与武汉景区知识库 Dify 问答接口（query 为唯一变量）。注意：知识库实际返回的是景区介绍类资料，票务、开放时间、实时客流等无可靠来源，须如实说明不得编造。
-description_zh: 武汉旅游咨询默认入口：除城市基本历史/地情、需要生成结构化行程单两类情况外，所有武汉游玩咨询类问题都由本技能承接；基于内置路线概览与景区知识库作答，无来源的实时信息须如实说明。
-description_en: Default entry for Wuhan travel consultation. Handles all Wuhan sightseeing questions except city history/gazetteer basics and requests for a structured itinerary. Answers come from the built-in G1-G9 route overview or the scenic-spot knowledge base; state plainly when real-time details such as ticketing or opening hours are unavailable.
+description: 武汉旅游咨询的默认承接技能。除三类情况外——武汉城市基本历史与地情信息（→ wuhan-intro）、需要生成结构化行程单或要一张可交互的全景／整体地图（→ wuhan-guide）——用户在武汉游玩相关的咨询类问题统一由本技能处理，包括景点详情、看点玩法、季节与主题推荐、景点对比取舍、讲解词与打卡清单、景点所属 G1-G9 线路等。答案来自内置的 G1-G9 路线概览文件与武汉景区知识库 Dify 问答接口（query 为唯一变量）。注意：知识库实际返回的是景区介绍类资料，票务、开放时间、实时客流等无可靠来源，须如实说明不得编造。
+description_zh: 武汉旅游咨询默认入口：除城市基本历史/地情、以及需要生成结构化行程单或全景导览地图（均由 wuhan-guide 承接）三类情况外，所有武汉游玩咨询类问题都由本技能承接；基于内置路线概览与景区知识库作答，无来源的实时信息须如实说明。
+description_en: Default entry for Wuhan travel consultation. Handles all Wuhan sightseeing questions except city history/gazetteer basics and requests for a structured itinerary or an interactive panorama map (both handled by wuhan-guide). Answers come from the built-in G1-G9 route overview or the scenic-spot knowledge base; state plainly when real-time details such as ticketing or opening hours are unavailable.
 examples_zh:
 - "介绍一下 G1 龟蛇主线"
 - "详细介绍一下东湖绿道"
@@ -24,12 +24,12 @@ allowed-tools: Bash(python3)
 
 ## 目的
 
-作为**武汉旅游咨询的默认入口**承接用户问题。分流只有一条**技能间**规则，其余一律由本技能处理：
+作为**武汉旅游咨询的默认入口**承接用户问题。分流只有以下**技能间**规则，其余一律由本技能处理：
 
 | 排除项 | 说明 | 交给谁 |
 | --- | --- | --- |
 | 武汉城市基本历史与地情信息 | 自然地理、建置沿革、人口经济、方言民俗、科教交通等地方志内容 | `wuhan-intro` |
-| 需要生成结构化行程单 | 「几日游怎么安排」「生成完整行程单」「某条线路包含哪些景点」 | `wuhan-route-query` |
+| 需要生成结构化行程单／要一张可交互的全景／整体地图 | 「几日游怎么安排」「生成完整行程单」「某条线路包含哪些景点」「武汉全景导览」「打开武汉导览地图」 | `wuhan-guide` |
 
 排除上表之后，武汉游玩咨询类问题都归本技能，例如：
 
@@ -94,10 +94,10 @@ allowed-tools: Bash(python3)
 
 ## 回答约束
 
-1. 默认承接武汉游玩咨询，**不要把问题推给其他技能**；只有明确落在排除项时才引导：`wuhan-intro`（城市历史与地情）、`wuhan-route-query`（需要生成结构化行程单）。点到点导航、实时路况、驾车/公交具体走法不在能力范围内，如实说明并建议用户使用地图 App，不得编造。
+1. 默认承接武汉游玩咨询，**不要把问题推给其他技能**；只有明确落在排除项时才引导：`wuhan-intro`（城市历史与地情）、`wuhan-guide`（生成结构化行程单或要全景导览地图）。点到点导航、实时路况、驾车/公交具体走法不在能力范围内，如实说明并建议用户使用地图 App，不得编造。
 2. 一切事实以内置文件或接口返回为准，接口未覆盖的内容明确说明，不要自行补充未经核实的信息（尤其票价、开放时间、交通班次）。
 3. 接口返回错误（HTTP 401/404/500 等）时，向用户说明调用失败并给出原始错误信息，不要改用自身记忆回答。
-4. 用户问题同时包含景点咨询与路线规划时，L0 快答只答咨询部分，把「生成完整行程单 / 某条线路包含哪些景点」列为可深入方向；仅在用户点选该方向或明确要求生成行程单后才调用 `wuhan-route-query`，不自动串联，也不要在本技能里生成完整行程单。
+4. 用户问题同时包含景点咨询与路线规划时，L0 快答只答咨询部分，把「生成完整行程单 / 某条线路包含哪些景点」列为可深入方向；仅在用户点选该方向或明确要求生成行程单后才调用 `wuhan-guide`，不自动串联，也不要在本技能里生成完整行程单。
 
 ## 资源
 

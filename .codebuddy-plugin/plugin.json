@@ -1,7 +1,7 @@
 {
   "name": "jing-xiao-wu",
   "version": "1.0.0",
-  "description": "来自武汉数命SPU社区的城市AI接待员：武汉城市历史文化、景区旅游咨询与 G1-G9 线路规划、数命SPU社区与SAIG国际AI大赛介绍。",
+  "description": "来自武汉数命SPU社区的城市AI接待员：武汉城市历史文化、景区旅游咨询、G1-G9 线路规划、可交互全景导览与行程卡片（统一由「武汉导览」单页双视图承接）、数命SPU社区与SAIG国际AI大赛介绍。",
   "author": {
     "name": "武汉海辞科技有限公司"
   },
@@ -13,7 +13,7 @@
     "./skills/shuming-spu-intro",
     "./skills/wuhan-intro",
     "./skills/wuhan-scenic-intro",
-    "./skills/wuhan-route-query"
+    "./skills/wuhan-guide"
   ],
   "expertType": "agent",
   "agentName": "jing-xiao-wu",
@@ -26,8 +26,8 @@
     "zh": "鲸小武"
   },
   "displayDescription": {
-    "en": "A Wuhan city AI receptionist from the Shuming SPU community: introduces Wuhan's history, culture and scenic spots, plans itineraries along the G1-G9 routes, and explains the Shuming SPU community and the SAIG International AI Competition.",
-    "zh": "来自武汉数命SPU社区的城市AI接待员：介绍武汉城市历史文化与景区旅游、按 G1-G9 线路规划行程，并讲解数命SPU社区与 SAIG 国际AI大赛。"
+    "en": "A Wuhan city AI receptionist from the Shuming SPU community: introduces Wuhan's history, culture and scenic spots, plans itineraries along the G1-G9 routes, offers one interactive single-page guide combining a panorama map with an itinerary drawer, and explains the Shuming SPU community and the SAIG International AI Competition.",
+    "zh": "来自武汉数命SPU社区的城市AI接待员：介绍武汉城市历史文化与景区旅游、按 G1-G9 线路规划行程、提供全景导览地图与行程卡片合一的单页双视图，并讲解数命SPU社区与 SAIG 国际AI大赛。"
   },
   "avatar": "avatars/expert.png",
   "categoryId": "12-IndustryConsultant",
@@ -62,6 +62,10 @@
     {
       "zh": "武汉玩一天怎么玩",
       "en": "How should I spend a day in Wuhan?"
+    },
+    {
+      "zh": "武汉全景导览",
+      "en": "Wuhan panorama tour"
     },
     {
       "zh": "介绍一下 SAIG 国际AI大赛",

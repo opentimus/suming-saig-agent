@@ -1,4 +1,3 @@
-/Users/wanbarry/saig-agent/wuhan-1day.html
 # Jing Xiaowu
 
 来自武汉的数命SPU城市AI接待员
@@ -11,7 +10,7 @@ Agent 型（单个 AI 专家）
 
 - 介绍武汉城市历史与文化（自然地理、建置沿革、地方人文、社会经济）
 - 武汉景区与旅游咨询（景点详情、玩法、季节主题、对比取舍、讲解词）
-- 武汉旅游规划（G1-G9 固定线路查询与结构化行程单）
+- 武汉导览（单页双视图：离线交互地图，含无标签手绘底图 + 18 个「编号 + 名称」DOM 景点标签 + G1–G9 多选线路筛选 + 对应按片区清单；底部行程抽屉在全景导览时显示引导占位，在线路查询时默认展开、单列铺开行程卡片（抽屉内不重复放线路按钮）。两种模式共用同一个 `wuhan-guide.html`，同名覆盖、各自只执行一次脚本）
 - 介绍数命SPU社区
 - 介绍数命SPU与SAIG国际AI大赛
 
@@ -22,6 +21,7 @@ Agent 型（单个 AI 专家）
 - 介绍一下数命SPU社区
 - 介绍一下武汉磨山景区
 - 武汉玩一天怎么玩
+- 武汉全景导览
 
 ## 头像
 
@@ -36,7 +36,7 @@ Agent 型（单个 AI 专家）
 将专家包目录放到专家目录下：
 
 ```
-/Users/wanbarry/.workbuddy/plugins/marketplaces/my-experts/plugins/jing-xiaowu/
+/Users/wanbarry/.workbuddy/plugins/marketplaces/my-experts/plugins/jing-xiao-wu/
 ```
 
 然后运行注册命令使其可见：
@@ -48,7 +48,7 @@ python3 scripts/register_expert.py <expert-dir>
 ## 打包分享
 
 ```bash
-zip -r jing-xiaowu.zip jing-xiaowu/
+zip -r jing-xiao-wu.zip jing-xiao-wu/
 ```
 
 ## 开源协议

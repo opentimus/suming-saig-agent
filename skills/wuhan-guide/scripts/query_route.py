@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 武汉海辞科技有限公司
-"""武汉固定旅游线路查询：按线路代号（G1-G9）输出结构化行程单。
+"""武汉导览 · 线路模式：查询 G1-G9，输出文字行程单并生成同一张单页。
 
 用法:
-    python3 query_route.py G1 G2          # 查询指定线路（可一次传多个）
-    python3 query_route.py --days 3       # 3 日游，自动推导为 G1 G2 G3
-    python3 query_route.py --find 黄鹤楼   # 按景点名反查所属线路并输出行程
-    python3 query_route.py --all          # 导出全部 9 条线路
+    python3 query_route.py G1 G2 --out /abs/path/to/workspace/wuhan-guide.html
+    python3 query_route.py --days 3      # 3 日游，自动推导为 G1 G2 G3
+    python3 query_route.py --find 黄鹤楼  # 按景点名反查所属线路
+    python3 query_route.py --all         # 导出全部 9 条线路
 
+与导览模式（show_map.py）共用同一份模板、同一个 ASCII 文件名 wuhan-guide.html，
+后者同名覆盖；全景导览零接口，本模式一次接口调用同时产出 stdout 文字行程单与单页。
 行程内的景点顺序以接口「排序」字段递增为准（可用 --no-sort 退回接口返回顺序）。
 
 代号表:
@@ -36,6 +38,9 @@ import tempfile
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+
+import guide_common as gc
 
 BASE_URL = os.environ.get("WUHAN_ROUTE_BASE_URL", "https://admin.aoaerp.com")
 API_TOKEN = os.environ.get(
@@ -483,41 +488,78 @@ def build_thumbs(urls: list, tmpdir: str, workers: int = IMAGE_WORKERS) -> dict:
     return thumbs
 
 
-CARDS_CSS = """
-* { box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f6f8; color: #222; margin: 0; padding: 24px; }
-.wrap { max-width: 1000px; margin: 0 auto; }
-.banner { background: #fff; border: 1px solid #e3e5e8; border-radius: 14px; padding: 20px 24px; margin-bottom: 20px; }
-.banner h1 { margin: 0 0 6px; font-size: 22px; }
-.banner .sub { color: #666; font-size: 14px; }
-.day { font-size: 17px; margin: 26px 0 4px; }
-.sub { color: #666; font-size: 13px; margin-bottom: 12px; }
-.grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
-.card { background: #fff; border: 1px solid #e3e5e8; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; }
-.card-h { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.num { background: #185fa5; color: #fff; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex: 0 0 auto; }
-.card-h h3 { margin: 0; font-size: 16px; }
-.meta { color: #666; font-size: 12.5px; margin-bottom: 8px; }
-.review { font-size: 13px; color: #444; margin: 0 0 10px; line-height: 1.5; }
-.thumbs { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 6px; margin-top: auto; }
-.thumb { margin: 0; flex: 0 0 calc((100% - 12px) / 3); min-width: 0; }
-.thumb img { width: 100%; height: 84px; object-fit: cover; border-radius: 6px; border: 1px solid #eee; display: block; }
-.nopic { font-size: 12.5px; color: #999; background: #fafafa; border: 1px dashed #ddd; border-radius: 8px; padding: 14px; text-align: center; margin-top: auto; }
-.foot { color: #999; font-size: 12px; margin-top: 18px; line-height: 1.6; }
+GUIDE_CARDS_CSS = """
+/* 全部选择器作用域到抽屉挂载点 .gd-cards，避免与地图 body / :root / @media 规则冲突 */
+.gd-cards{padding:14px 0 4px;border-top:1px solid rgba(25,54,76,.1)}
+.gd-cards .gc-root{font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;color:#19364c}
+.gd-cards .gc-root *{box-sizing:border-box}
+.gd-cards .gc-banner{
+  padding:14px 18px;margin:0 0 16px;border-radius:14px;
+  background:linear-gradient(135deg,rgba(255,255,255,.82),rgba(232,244,248,.6));
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+}
+.gd-cards .gc-banner h1{margin:0 0 5px;font-size:17px;font-weight:800;letter-spacing:.02em}
+.gd-cards .gc-sub{font-size:11.5px;font-weight:600;color:#758b96;line-height:1.6}
+.gd-cards .gc-route{margin:0 0 18px}
+.gd-cards .gc-route.gc-hidden{display:none}
+.gd-cards .gc-day{
+  margin:0 0 4px;font-size:14px;font-weight:800;color:#19364c;
+  display:flex;align-items:center;gap:8px;
+}
+.gd-cards .gc-day::before{
+  content:"";width:4px;height:15px;border-radius:99px;flex:none;
+  background:linear-gradient(180deg,#f2ae4c,#c9741c);
+}
+.gd-cards .gc-grid{display:grid;grid-template-columns:1fr;gap:10px}
+.gd-cards .gc-card{
+  padding:14px 16px;border-radius:13px;
+  display:grid;grid-template-columns:minmax(0,1fr) 320px;
+  grid-template-areas:"head thumbs" "meta thumbs" "review thumbs";
+  column-gap:20px;align-items:start;
+  background:linear-gradient(160deg,rgba(255,255,255,.94),rgba(240,248,250,.82));
+  border:1px solid rgba(255,255,255,.95);
+  box-shadow:0 4px 14px rgba(31,74,99,.1),inset 0 1px 0 rgba(255,255,255,.9);
+  transition:transform .24s cubic-bezier(.2,.8,.2,1),box-shadow .24s;
+}
+.gd-cards .gc-card:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(31,74,99,.2)}
+.gd-cards .gc-card-h{grid-area:head;display:flex;align-items:center;gap:9px;margin-bottom:5px}
+.gd-cards .gc-num{
+  width:23px;height:23px;border-radius:7px;flex:none;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;color:#fff;text-shadow:0 1px 1px rgba(120,65,10,.35);
+  background:linear-gradient(140deg,#f2ae4c,#e69a32 45%,#c9741c);
+  box-shadow:0 2px 6px rgba(115,65,10,.3);
+}
+.gd-cards .gc-card-h h3{margin:0;font-size:13.5px;font-weight:800;color:#19364c}
+.gd-cards .gc-meta{grid-area:meta;font-size:10.5px;font-weight:600;color:#758b96;margin-bottom:4px;line-height:1.6}
+.gd-cards .gc-review{grid-area:review;font-size:11.5px;line-height:1.7;color:#4d6b7b;margin:0}
+.gd-cards .gc-thumbs{grid-area:thumbs;align-self:center;display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;margin-top:0;max-width:320px}
+.gd-cards .gc-thumb{margin:0;flex:0 0 calc((100% - 12px) / 3);min-width:0}
+.gd-cards .gc-thumb img{
+  width:100%;height:82px;object-fit:cover;display:block;border-radius:7px;
+  border:1px solid rgba(255,255,255,.9);box-shadow:0 2px 8px rgba(31,74,99,.12);
+}
+.gd-cards .gc-nopic{
+  font-size:11px;color:#9aabb4;background:rgba(255,255,255,.6);
+  border:1px dashed rgba(85,182,232,.4);border-radius:9px;
+  padding:10px;text-align:center;margin-top:0;grid-column:2;grid-row:1 / -1;align-self:center;
+}
+.gd-cards .gc-foot{font-size:10.5px;line-height:1.7;color:#8aa0aa;margin:6px 0 0}
+@media(max-width:650px){
+ .gd-cards .gc-banner{padding:12px 14px}
+ .gd-cards .gc-card{grid-template-columns:1fr;grid-template-areas:"head" "meta" "review" "thumbs";row-gap:6px}
+ .gd-cards .gc-thumbs,.gd-cards .gc-nopic{grid-column:1;grid-row:auto;max-width:100%;margin-top:6px;align-self:auto}
+}
 """
 
 
-def render_cards(codes, records, heading, sort=True, show_images=True, out_path=None):
-    """生成 HTML 缩略卡页面并写入 out_path，返回路径。
+def render_card_fragment(codes, records, heading, sort=True, show_images=True) -> tuple:
+    """生成 (作用域化 CSS, 行程卡 HTML 片段)，交给 guide_common.render_page 注入单页。
 
-    本函数只负责写 HTML 文件，文字行程单由调用方（main）另行调用 render() 输出。
-    当全表图片为同一组占位图时，强制文字版（不嵌图）并标注待补齐。
+    本函数不写任何文件、不打印预览提示；文字行程单由调用方另行调用 render() 输出。
+    每条线路包一层 .gc-route[data-route]，供抽屉脚本按 G1–G9 选择过滤。
     """
-    if out_path is None:
-        # 文件名保持纯 ASCII：部分预览服务/网关对中文路径返回 403 Forbidden
-        out_path = os.path.join(os.getcwd(), "wuhan-route-" + "".join(codes) + ".html")
-    # 统一成绝对路径，便于调用方直接拿去预览
-    out_path = os.path.abspath(os.path.expanduser(out_path))
     groups = {c: [r for r in records if r["code"] == c] for c in codes}
     if sort:
         groups = {c: sort_spots(g) for c, g in groups.items()}
@@ -529,7 +571,7 @@ def render_cards(codes, records, heading, sort=True, show_images=True, out_path=
     sections = []
     # 所有缩略图复用同一个临时目录，函数结束时由 with 自动回收
     with tempfile.TemporaryDirectory() as tmpdir:
-        # 先并发预取本次渲染所需的全部图片，避免逐张串行下载（实测 200 张需 160s+）
+        # 先并发预取本次渲染所需的全部图片，避免逐张串行下载
         need = []
         if show_images and not placeholder:
             for c in codes:
@@ -552,29 +594,27 @@ def render_cards(codes, records, heading, sort=True, show_images=True, out_path=
                 seen = set()
                 urls = [u for u in urls if not (u in seen or seen.add(u))]
                 if not show_images:
-                    imgs = '<div class="nopic">已按 --no-image 隐藏图片</div>'
+                    imgs = '<div class="gc-nopic">本页为轻量模式，未载入配图</div>'
                 elif placeholder:
-                    imgs = '<div class="nopic">图片待后台补齐（当前为占位图）</div>'
+                    imgs = '<div class="gc-nopic">图片待后台补齐（当前为占位图）</div>'
                 elif urls:
                     parts = []
                     for u in urls:
                         lab, rel = image_label(u)
                         data = thumbs.get(u)
+                        # 合并页是离线单文件：内联失败不再回退外链，避免产生 http(s) 资源请求
+                        if not data:
+                            continue
                         alt = html.escape(r["spot"])
-                        if data:
-                            src, note = data, ""
-                        else:
-                            # 内联失败时回退原始外链：服务端下载不了不代表浏览器加载不了，
-                            # 仍给一次机会；加载不出来由 onerror 隐藏，不留裂图
-                            src, note = html.escape(u), ' data-fallback="1"'
                         parts.append(
-                            '<figure class="thumb"><img src="' + src + '" alt="' + alt +
+                            '<figure class="gc-thumb"><img src="' + data + '" alt="' + alt +
                             '" loading="lazy" onerror="this.style.display=\'none\'"' +
-                            note + ' title="' + html.escape(lab) + '"></figure>'
+                            ' title="' + html.escape(lab) + '"></figure>'
                         )
-                    imgs = '<div class="thumbs">' + "".join(parts) + '</div>' if parts else '<div class="nopic">图片加载失败</div>'
+                    imgs = ('<div class="gc-thumbs">' + "".join(parts) + '</div>'
+                            if parts else '<div class="gc-nopic">配图暂不可用（离线页面已省略外链）</div>')
                 else:
-                    imgs = '<div class="nopic">暂无配图（接口未返回图片）</div>'
+                    imgs = '<div class="gc-nopic">暂无配图（接口未返回图片）</div>'
                 # 后台表字段可能含 < > & 等字符，拼进 HTML 前一律转义
                 meta = " ｜ ".join(
                     html.escape(x)
@@ -586,51 +626,33 @@ def render_cards(codes, records, heading, sort=True, show_images=True, out_path=
                     ]
                     if x
                 )
-                review = ('<p class="review">' + html.escape(r["review"]) + '</p>') if r["review"] else ""
+                review = ('<p class="gc-review">' + html.escape(r["review"]) + '</p>') if r["review"] else ""
                 cards.append(
-                    '<article class="card"><div class="card-h"><span class="num">' + str(n) +
-                    '</span><h3>' + html.escape(r["spot"]) + '</h3></div><div class="meta">' +
+                    '<article class="gc-card"><div class="gc-card-h"><span class="gc-num">' + str(n) +
+                    '</span><h3>' + html.escape(r["spot"]) + '</h3></div><div class="gc-meta">' +
                     meta + '</div>' + review + imgs + '</article>'
                 )
-            sub = ('<h2 class="day">第' + str(idx) + '天 · ' + code + ' ' + ROUTE_NAMES[code] +
-                   '</h2><div class="sub">片区：' + html.escape("、".join(areas)) + ' ｜ 本线时长：' +
+            sub = ('<h2 class="gc-day">第' + str(idx) + '天 · ' + ROUTE_NAMES[code] +
+                   '</h2><div class="gc-sub">片区：' + html.escape("、".join(areas)) + ' ｜ 本线时长：' +
                    fmt_hours(line_hours) + ' ｜ ' + str(len(group)) + ' 个景点</div>')
-            sections.append(sub + '<div class="grid">' + "".join(cards) + '</div>')
+            sections.append(
+                '<section class="gc-route" data-route="' + code + '">' +
+                sub + '<div class="gc-grid">' + "".join(cards) + '</div></section>'
+            )
 
-    banner_title = (heading.strip() + " 行程缩略卡") if heading.strip() else "武汉行程缩略卡"
-    banner = ('<div class="banner"><h1>' + html.escape(banner_title) +
-              '</h1><div class="sub">线路：' + "、".join(codes) + ' ｜ 全程约 ' +
-              fmt_hours(total_hours) + ' ｜ 共 ' + str(total_spots) + ' 个景点</div></div>')
-    foot = ('<p class="foot">图片来自接口「图片1/2/3」字段，缩放后内联，'
-            '鼠标悬停图片可查看来源。相同 URL 已自动去重。'
+    banner_title = (heading.strip() + " 行程卡片") if heading.strip() else "武汉行程卡片"
+    banner = ('<div class="gc-banner"><h1>' + html.escape(banner_title) +
+              '</h1><div class="gc-sub">全程约 ' + fmt_hours(total_hours) +
+              ' ｜ 共 ' + str(total_spots) + ' 个景点</div></div>')
+    foot = ('<p class="gc-foot">图片来自接口「图片1/2/3」字段，缩放后内联。相同 URL 已自动去重。'
             + ('<br>检测到全表图片为同一组占位图，卡片已隐藏图片，待后台按景点补齐真实配图后自动恢复。'
                if placeholder else '')
             + '</p>')
-    doc = ('<!doctype html><html lang="zh"><head><meta charset="utf-8">'
-           '<meta name="viewport" content="width=device-width,initial-scale=1"><title>' +
-           html.escape(banner_title) + '</title><style>' + CARDS_CSS +
-           '</style></head><body><div class="wrap">' + banner + "".join(sections) + foot +
-           '</div></body></html>')
-    with open(out_path, "w", encoding="utf-8") as f:
-        f.write(doc)
-    print(_preview_hint(out_path), file=sys.stderr)
-    return out_path
+    fragment = '<div class="gc-root">' + banner + "".join(sections) + foot + '</div>'
+    return GUIDE_CARDS_CSS, fragment
 
 
-# 预览服务（WorkBuddy/IDE）通常只服务工作区目录，这些路径下的文件直接预览会返回 403
-NON_PREVIEWABLE_ROOTS = ("/tmp", "/private/tmp", "/var/folders", "/private/var/folders")
 
-
-def _preview_hint(path: str) -> str:
-    """给出卡片路径，并在文件位于临时目录时提示预览可能返回 Forbidden。"""
-    ap = os.path.abspath(path)
-    if ap.startswith(NON_PREVIEWABLE_ROOTS):
-        return (
-            f"卡片已写入：{ap}\n"
-            f"警告：该路径位于系统临时目录，预览服务通常只服务工作区，"
-            f"直接预览会返回 Forbidden(403)。请用 --out 输出到工作区内的绝对路径后重试。"
-        )
-    return f"卡片已写入：{ap}"
 
 
 def render(
@@ -734,13 +756,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--cards",
         action="store_true",
-        help="输出 HTML 缩略卡（图片内联，离线可看），默认写入 ./wuhan-route-<codes>.html",
+        help="兼容旧调用保留；合并后线路模式的单页始终生成，此开关不再影响输出",
     )
     parser.add_argument(
         "--out",
         metavar="路径",
-        help="--cards 模式下的 HTML 输出路径（默认 ./wuhan-route-<codes>.html）；"
-        "建议指定工作区内的绝对路径，写到 /tmp 等临时目录会被预览服务拒绝",
+        help="单页 HTML 输出路径（默认 ./wuhan-guide.html，与导览模式同名覆盖）；"
+        "须为工作区内的绝对路径，写到 /tmp 等临时目录会被预览服务拒绝",
     )
     return parser
 
@@ -753,6 +775,7 @@ def main() -> None:
             "用法: query_route.py G1 [G2 ...] | --days 3 | --find 黄鹤楼 | --all"
         )
 
+    # 接口失败时 fetch_records() 抛 SystemExit：非零退出、不写也不覆盖页面，原始错误如实回显
     rows, total = fetch_records()
     records = normalize(rows)
 
@@ -769,26 +792,25 @@ def main() -> None:
     else:
         target_codes, heading = parse_codes(args.codes), ""
 
-    # 文字行程单始终打到 stdout；--cards 时额外写一份 HTML 缩略卡
-    out_path = None
-    if args.cards:
-        out_path = render_cards(
-            target_codes,
-            records,
-            heading,
-            sort=not args.no_sort,
-            show_images=not args.no_image,
-            out_path=args.out,
-        )
-    render(
-        target_codes,
-        records,
-        heading,
-        sort=not args.no_sort,
-        show_images=not args.no_image,
+    css, fragment = render_card_fragment(
+        target_codes, records, heading,
+        sort=not args.no_sort, show_images=not args.no_image,
     )
-    if out_path:
-        print(f"\n已生成缩略卡 HTML：{out_path}")
+
+    # 文字行程单始终打到 stdout；单页在同一次调用中生成，禁止重复拉接口
+    render(
+        target_codes, records, heading,
+        sort=not args.no_sort, show_images=not args.no_image,
+    )
+    out = Path(os.path.abspath(os.path.expanduser(
+        args.out or os.path.join(os.getcwd(), gc.DEFAULT_NAME)
+    )))
+    try:
+        path = gc.render_page(cards_css=css, cards_html=fragment, mode="route", out=out)
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"生成武汉导览单页失败：{exc}")
+    print(f"\n已生成武汉导览单页（含行程卡片）：{path}")
+    print(gc.preview_hint(Path(path)), file=sys.stderr)
     sys.stdout.flush()
     print(f"\n---\n拉取 {len(rows)} 条 / total={total}", file=sys.stderr)
     if args.no_sort:
@@ -799,7 +821,7 @@ def main() -> None:
             print("排序字段异常，已按可用值递增并在异常处保持接口顺序：", file=sys.stderr)
             for item in problems:
                 print(f"  - {item}", file=sys.stderr)
-    if not args.no_image and not args.cards:
+    if not args.no_image:
         for item in image_issues(records):
             print(f"图片字段提示：{item}", file=sys.stderr)
 
