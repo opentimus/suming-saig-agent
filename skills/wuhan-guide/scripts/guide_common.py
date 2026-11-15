@@ -183,16 +183,21 @@ def render_spots_html(spots: list) -> str:
     return "\n".join(lines)
 
 
-def render_route_btns(spots: list) -> str:
-    """生成 9 个线路按钮；data-spots 由景点声明的所属线路反推，允许为空集合。"""
+def render_route_btns(spots: list, selected=()) -> str:
+    """生成 9 个线路按钮；data-spots 由景点声明的所属线路反推，允许为空集合。
+
+    selected 为默认选中的线路代号集合（线路模式预选本次行程的组）；缺省为空，导览模式行为不变。
+    """
     mapping = route_spots(spots)
+    pressed = set(selected)
     lines = []
     for code, name in ROUTES:
         nos = mapping[code]
         raw = ",".join(str(n) for n in nos)
+        state = "true" if code in pressed else "false"
         lines.append(
             f'        <button class="route-btn" type="button" data-route="{code}" data-spots="{raw}" '
-            f'aria-pressed="false" title="{code} {escape(name, quote=True)} · 覆盖 {len(nos)} 个点位" '
+            f'aria-pressed="{state}" title="{code} {escape(name, quote=True)} · 覆盖 {len(nos)} 个点位" '
             f'aria-label="{code} {escape(name, quote=True)}">{code}</button>'
         )
     return "\n".join(lines)
@@ -309,12 +314,14 @@ def _apply_map_image(html: str, *, path: Path, inline_image: bool) -> tuple:
 def render_page(*, cards_css: str, cards_html: str, mode: str,
                 out: Path, template: str | None = None,
                 spots: list | None = None,
-                inline_image: bool = False) -> str:
+                inline_image: bool = False,
+                selected=()) -> str:
     """把景点、线路按钮、页内数据、卡片 CSS / HTML / 模式注入模板并原子写出。
 
     template / spots 可由入口传入已校验过的结果，避免重复读取大文件。
     块内默认内容只服务于“模板直接打开”，生成时整体替换。
     inline_image=True 时把底图 base64 内联回单文件（默认外置，产物为 html + jpg 两个文件）。
+    selected 为自带默认选中的线路代号集合，透传给线路按钮；缺省为空，导览模式保持全未选中。
     """
     if mode not in MODES:
         raise ValueError(f"未知页面模式：{mode}，应为 {' / '.join(MODES)}")
@@ -322,7 +329,7 @@ def render_page(*, cards_css: str, cards_html: str, mode: str,
     spot_list = spots if spots is not None else load_spots()
 
     spots_html = render_spots_html(spot_list)
-    route_btns = render_route_btns(spot_list)
+    route_btns = render_route_btns(spot_list, selected)
     spots_json = (
         '<script type="application/json" id="guideSpotsData">'
         + render_spots_json(spot_list)

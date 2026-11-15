@@ -149,11 +149,24 @@ def build_chunks_for_section(header: str, lines, source_name: str):
     return chunks
 
 
+def _looks_like_toc(header: str, lines) -> bool:
+    """识别目录/页号清单等低信息量区块，避免其占用检索结果。"""
+    if re.sub(r"\s+", "", header or "") in {"目录", "目次", "contents"}:
+        return True
+    body = [ln.strip() for ln in lines if ln.strip()]
+    if len(body) < 5:
+        return False
+    numbered = sum(1 for ln in body if re.search(r"\d{2,4}$", ln))
+    return numbered / len(body) >= 0.6 and sum(len(ln) for ln in body) < 600
+
+
 def chunk_source(source_name: str, text: str):
     """按章节切分单个 Markdown 数据源；无标题时以文件名主干作为章节名。"""
     doc_title = os.path.splitext(source_name)[0]
     chunks = []
     for header, lines in split_into_sections(text):
+        if _looks_like_toc(header, lines):
+            continue
         chunks.extend(
             build_chunks_for_section(header or doc_title, lines, source_name)
         )

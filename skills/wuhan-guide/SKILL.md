@@ -67,6 +67,7 @@ allowed-tools: Bash(python3)
 | 半天 / 3 小时 | `--half` 或 `--hours 3`（按线路累计时长裁剪，至少保留一条） |
 | 从汉口出发 / 想在某片区 | `--area 汉口` |
 | 想要夜景 / 美食 / 亲子 | `--theme 夜景`（匹配类型、景点、点评） |
+| 让页面只默认选中某几组 | `--preselect G1,G2`（与本次行程取交集，非法代号忽略） |
 
 - 现有参数能表达时，不要新增代码；确需新增能力时，只加可选参数与客户端过滤/裁剪，复用 `fetch_records()`、`normalize()`、`render()`、`render_card_fragment()` 与模板链路，**禁止重写抓取、归一化、渲染或模板**。
 - 新参数默认关闭，缺省行为与现有完全一致。
@@ -93,7 +94,7 @@ allowed-tools: Bash(python3)
 
 ### 模式 B · 线路查询（一次接口调用）
 
-1. 按 `references/route_codes.md` 的代号字典、衔接链与 N 日游推导表，把自然语言解析为代号数组（`--days N`、`--find <景点名>`、`--all` 或直接代号），再按需叠加 `--exclude/--replace/--half/--hours/--area/--theme` 微调（保留 `--no-sort` 与 `--no-image` 排查能力）。
+1. 按 `references/route_codes.md` 的代号字典、衔接链与 N 日游推导表，把自然语言解析为代号数组（`--days N`、`--find <景点名>`、`--all` 或直接代号），再按需叠加 `--exclude/--replace/--half/--hours/--area/--theme/--preselect` 微调（保留 `--no-sort` 与 `--no-image` 排查能力）。
 
 2. 执行**一次**脚本，同时取得 stdout 文字行程单与同一张单页：
 
@@ -105,6 +106,7 @@ allowed-tools: Bash(python3)
    python3 skills/wuhan-guide/scripts/query_route.py --days 2 --exclude 黄鹤楼 --hours 8 --out <工作区绝对路径>/wuhan-guide.html
    python3 skills/wuhan-guide/scripts/query_route.py G1 G2 --replace 东湖=汉街 --out <工作区绝对路径>/wuhan-guide.html
    python3 skills/wuhan-guide/scripts/query_route.py --all --area 汉口 --theme 夜景 --out <工作区绝对路径>/wuhan-guide.html
+  python3 skills/wuhan-guide/scripts/query_route.py --days 2 --exclude 龟山公园 --preselect G1,G2 --out <工作区绝对路径>/wuhan-guide.html
    ```
 
    `--cards` 为兼容旧调用保留的空开关：合并后单页始终生成，可省略。省略 `--out` 时脚本写到当前工作目录下的 `wuhan-guide.html`，实际调用仍应显式传工作区绝对路径。
@@ -123,7 +125,10 @@ allowed-tools: Bash(python3)
 
 - 同一问题只落一个模式、最多一条 `Bash(python3)` 命令；不自动串联其他技能。
 - 产物固定为 `wuhan-guide.html`，两种模式同名幂等覆盖；先导览后线路时，后者覆盖前者为含行程卡片的版本，属预期行为，需向用户说明页面已更新。
-- 交付形态默认是**两个文件**：`wuhan-guide.html` + 同目录的 `wuhan-guide-map.jpg`（脚本自动写出）。向用户说明时点明两者需一起拷走/转发；确需单文件时加 `--inline-image`，底图会重新 base64 内联，代价是首屏解码变慢。
+- **交付物只有 `wuhan-guide.html`**：同目录 `wuhan-guide-map.jpg` 是页面相对引用的内部资源，脚本会自动写出，但**不要**把它当作独立交付文件列出、也不要在回复里生成 jpg 文件卡片；底图随页面加载即可。确需单文件转发时加 `--inline-image`，底图会 base64 内联，代价是首屏解码变慢。
+- **脚本无会话，修订须整串传参**：每次调用都重新拉接口、重渲染、原子覆盖同名文件；修订时把当前完整行程配置（如 `--days 2 --exclude 龟山公园 --preselect G1,G2`）叠加增量后整串重传，禁止只传增量，也不要假设上次参数被记住。
+- **页面内编辑不持久**：组内增删/拖动仅当页生效（localStorage + baseHash），重新生成即失效；需跨修订保留时把改动回写为生成参数（`--exclude`/`--replace` 等），并在交付时说明「页面内编辑不持久」。
+- **以产物 HTML 为准**：同名覆盖可能遇预览缓存，判断配置是否生效应读取产物 HTML 实际内容（`aria-pressed`、`gc-hidden`、是否仍含已排除景点），不要只看预览面板；必要时用带查询串/新 hash 的预览 URL 打开。
 - `map` 模式无知识库来源；`route` 模式按 `agents/jing-xiao-wu.md` 的输出规范自然呈现、不暴露内部引用，并说明实时信息边界。
 
 ## 回答约束

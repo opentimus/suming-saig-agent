@@ -11,6 +11,7 @@
     python3 query_route.py --days 2 --exclude 黄鹤楼 --hours 8   # 排除景点并按时长裁剪
     python3 query_route.py G1 G2 --replace 东湖=汉街             # 线路内替换景点
     python3 query_route.py --all --area 汉口 --theme 夜景         # 按片区/主题筛选
+    python3 query_route.py --days 2 --preselect G1               # 页面默认只预选 G1
 
 与导览模式（show_map.py）共用同一份模板、同一个 ASCII 文件名 wuhan-guide.html，
 后者同名覆盖；全景导览零接口，本模式一次接口调用同时产出 stdout 文字行程单与单页。
@@ -994,6 +995,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="按类型/景点/点评子串筛选，如 夜景、美食、博物馆；可重复",
     )
     parser.add_argument(
+        "--preselect",
+        action="append",
+        metavar="代号",
+        help="页面打开时默认选中的线路，沿用代号/线路名/逗号顿号分隔；缺省为本次行程线路",
+    )
+    parser.add_argument(
         "--no-sort",
         action="store_true",
         help="不按「排序」字段重排景点，保留接口返回的原始顺序",
@@ -1068,8 +1075,9 @@ def main() -> None:
     notices += msgs
 
     # 2) 排除线路/景点
+    exclude_terms = split_terms(args.exclude)
     target_codes, records, msgs = apply_excludes(
-        target_codes, records, split_terms(args.exclude)
+        target_codes, records, exclude_terms
     )
     notices += msgs
 
@@ -1098,6 +1106,25 @@ def main() -> None:
         target_codes, msgs = trim_by_hours(target_codes, records, budget)
         notices += msgs
 
+    # 6) 页面预选：--preselect 与最终 target_codes 求交集（缺省回退 target_codes）
+    preselect_terms = split_terms(args.preselect)
+    if preselect_terms:
+        wanted, invalid = set(), []
+        for term in preselect_terms:
+            code = code_of_token(term)
+            if code:
+                wanted.add(code)
+            else:
+                invalid.append(term)
+        if invalid:
+            print(f"提示：忽略无法识别的 --preselect 代号：{'、'.join(invalid)}", file=sys.stderr)
+        selected = [c for c in target_codes if c in wanted]
+        if not selected:
+            print("提示：--preselect 与本次行程无交集，回退为默认选中全部行程线路", file=sys.stderr)
+            selected = list(target_codes)
+    else:
+        selected = list(target_codes)
+
     for msg in notices:
         print(f"提示：{msg}", file=sys.stderr)
 
@@ -1114,9 +1141,14 @@ def main() -> None:
     out = Path(os.path.abspath(os.path.expanduser(
         args.out or os.path.join(os.getcwd(), gc.DEFAULT_NAME)
     )))
+    # 地图景点：与行程排除项同步过滤，避免交付页面在地图热区/内联数据里残留被排除景点
+    exclude_names = [t for t in exclude_terms if not code_of_token(t)]
+    map_spots = gc.load_spots()
+    if exclude_names:
+        map_spots = [s for s in map_spots if not any(t in s["name"] for t in exclude_names)]
     try:
         path = gc.render_page(cards_css=css, cards_html=fragment, mode="route", out=out,
-                              inline_image=args.inline_image)
+                              inline_image=args.inline_image, selected=selected, spots=map_spots)
     except (OSError, ValueError) as exc:
         raise SystemExit(f"生成武汉导览单页失败：{exc}")
     deliverable = "单文件" if args.inline_image else f"页面 + 同目录 {gc.MAP_IMAGE.name}"

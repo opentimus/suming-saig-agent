@@ -22,109 +22,54 @@ todos:
 ---
 
 ## 产品概述
+将新增的《2026 武汉旅游产品手册》纳入 `saig-spu-rag` 本地知识库，使其可被检索问答覆盖武汉文博场馆、四季赏花、都市漫游、红色旅游、演艺空间、乡村休闲、湖光山色、科技研学、长江游览、汉派美食、线路攻略及具体景点讲解等内容。
 
-让「鲸小武」城市AI接待员回答更自然、更快、且不暴露内部引用；同时在不重写的前提下，为 wuhan-guide 的线路规划脚本补充三类向后兼容的小幅能力，覆盖更多旅游规划诉求。
+## 核心功能
+- 新手册作为第 5 份数据源进入检索索引，与现有 4 份 Markdown 一并参与检索。
+- 重建 `data/chunks.json` 与 `data/index.json`，使运行期检索能命中手册内容。
+- 更新技能说明：描述、数据源清单、「何时使用」覆盖旅游产品手册类问题。
+- 保持现有「检索仅供内部核对、不向用户展示来源、自然作答」口径不变。
 
-## 核心特性
+## 视觉/交互
+无界面变更，仅知识库内容与技能文档修订。
 
-- 回答风格自然化：去掉固定「五段式模板」与每次结尾强行追加的「2-3 个可深入方向」，按需自然作答、先答后补。
-- 不显示内部引用：对用户不出现文件名、章节、页码、「知识库」标签或检索过程；检索仅用于内部保证准确。
-- 更快的响应：优先一次调用、减少不必要的串联，检索候选数下调。
-- wuhan-guide 三类小幅扩展（均为可选参数，默认行为不变）：
-- 排除或替换景点/线路（如「不去黄鹤楼」「把东湖换成汉街」）。
-- 半天或自定义时长（如「半天」「3 小时」，按整条线路裁剪行程组合）。
-- 按片区或主题偏好筛选（如「从汉口出发」「亲子/夜景」）。
-- 文档同步：Agent 路由与 wuhan-guide 技能说明补充新参数与「最小适配、禁止大改」原则。
 
 ## 技术栈
-
-- Python 3 标准库（argparse、re 等），无新增第三方依赖。
-- 文档为 Markdown；wuhan-guide 复用现有模板与渲染链路。
-- 现有数据字段：code、order、spot、kind、duration、stars、review、area、img1..3。
+- Python 3 标准库；沿用现有 Okapi BM25 检索（中文单字 + 二元组分词）。
+- Markdown 数据源；无第三方依赖、无网络、无 subprocess。
+- 技能目录结构保持不变：`SKILL.md` + `scripts/` + `references/` + `data/`。
 
 ## 实现思路
-
-### 需求1：回答自然、快速、无内部引用
-
-修改 `agents/jing-xiao-wu.md`：
-
-- 核心能力与路由表中删除「返回带来源/章节/页码的证据块，供作答引用」等表述，改为「检索仅用于内部核对，对用户自然作答」。
-- L0 快答：删除固定五段式模板与强制「2-3 个可深入方向」；改为「直接、口语化、简洁作答，先给结论再补必要细节；信息不足或可延续时再自然提示」。
-- 输出规范：删除「标注来源」条目；保留忠实事实、自然措辞的边界说明、错误透明。
-- 检索调用候选数由 `6` 下调到 `4`，坚持单次调用、避免同轮串联。
-
-修改 `skills/saig-spu-rag/SKILL.md`：
-
-- description/Overview 去掉「供作答时引用」口径，改为「检索用于内部保证准确，不向用户展示来源」。
-- 使用步骤第 4 步改为「仅以检索内容为事实依据、用自己的话自然作答，不提及文件名、章节或检索过程」。
-- 字段说明保留（source/section/page 仅供内部核对），`retrieve.py` 输出结构不改。
-
-### 需求2：query_route.py 三类最小增量
-
-仅新增可选参数与小函数，复用 `fetch_records`、`normalize`、`render`、`render_card_fragment`、`gc.render_page`，不改抓取、归一化、模板。
-
-新增参数（全部可选、向后兼容）：
-
-- `--exclude`（可重复，支持逗号/顿号分隔）：若为线路代号（G1-G9）则从目标线路中移除；否则按景点名子串剔除。
-- `--replace OLD=NEW`（可重复）：在所选线路内，用数据集中已存在的 NEW 替换 OLD，保持原位置与所属代号；NEW 不存在则 stderr 警告并跳过。
-- `--half`：等价 `--hours 4`。
-- `--hours H`：按线路规范顺序累计各线 `parse_hours` 时长，保留预算内的线路（至少保留 1 条），超出部分提示。
-- `--area`（可重复）：按 `area` 子串筛选（如 汉口）。
-- `--theme`（可重复）：按 `kind`、`spot`、`review` 子串筛选（如 亲子、夜景、美食）。
-
-主流程接入顺序（`main()` 内、渲染之前）：
-
-1. `records = normalize(rows)`。
-2. 按 all/days/find/codes 得到 `target_codes`（`--find` 仍用全量记录反查）。
-3. 应用 `--replace`（以全量记录查找 NEW）。
-4. 应用 `--exclude`（代号移除 + 景点过滤）。
-5. 应用 `--area`、`--theme` 过滤。
-6. 剔除过滤后为空的线路，保持顺序。
-7. 应用 `--hours`/`--half` 线路级裁剪。
-8. 复用 `render` 与 `render_card_fragment` 输出文字行程单与单页。
-
-```mermaid
-flowchart LR
-  A[fetch_records] --> B[normalize]
-  B --> C[选定 target_codes]
-  C --> D[replace]
-  D --> E[exclude]
-  E --> F[area/theme]
-  F --> G[去空线路]
-  G --> H[hours 裁剪]
-  H --> I[render + render_card_fragment]
-```
-
-边界与兼容：
-
-- 无基础选择但给了 `--hours/--half` 时，默认 `codes_for_days(1)` 再裁剪。
-- 仅有筛选类参数而无基础选择时，默认 `--all` 再筛选。
-- 过滤/替换后为空则清晰报错退出，不崩溃、不覆盖既有页面。
-- 所有新参数缺省时，行为与当前完全一致。
-
-### 文档同步
-
-- `skills/wuhan-guide/SKILL.md`：模式 B 补充新参数示例，并写入「优先映射现有参数；确需扩展时在现有函数上做最小增量、复用 fetch/normalize/render/模板，禁止重写」原则。
-- `agents/jing-xiao-wu.md` 路由：补充新参数示例，强调「其他规划需求最小适配」。
+1. **无需改检索代码**：`build_index.py` 已自动扫描 `references/*.md`（并跳过 `sources.md`），`clean_markdown()` 会剥离 `![image](...)` 图片语法、把链接还原为文本、去掉 `<sup>/<sub>` 等 HTML 标签；`MD_HEADING_RE` 识别 `#`/`##` 标题，因此新手册会被自动分块与索引。
+2. **重建数据**：运行 `python3 scripts/build_index.py`，重新生成 `data/chunks.json` 与 `data/index.json`，写入日志会列出每份数据源的块数，确认新手册已纳入。
+3. **修订 `SKILL.md`（使用 skill-creator 规范）**：
+   - `description` 增补「《2026 武汉旅游产品手册》」及文博/赏花/美食/演艺/研学/线路攻略等场景。
+   - 「数据源」新增 `references/2026武汉旅游产品手册md.md` 一行，注明内容范围。
+   - 「何时使用」新增旅游产品手册类触发场景（景点讲解、主题游线、文博场馆、赏花时节、汉派美食、演艺空间、科技研学、线路攻略等）。
+   - 「references/」资源说明由「4 份」改为「5 份」。
+   - 保持「检索仅供内部核对、不展示来源」口径不变。
+4. **验证**：用「黄鹤楼」「武汉赏花」「汉派美食」「科技研学」「线路攻略」等样例调用 `retrieve.py`，确认命中 `source` 为 `2026武汉旅游产品手册md.md`；检查分块来源统计、`page` 均为 null；确认无绝对路径与 `sources.md` 残留；`tools/pack_expert.py --list` 通过。
 
 ## 性能与可靠性
-
-- 过滤/裁剪为 O(记录数)，百级规模，开销可忽略；仍保持单次接口调用，新参数不触发额外请求。
-- 空结果、无效 `--replace` 格式、预算不合理等均以 stderr 明确提示，退出码非零但不破坏产物。
-- `--find` 反查不受过滤影响，避免语义漂移。
+- 构建期一次性 O(总 token 数)；运行期检索仍为毫秒级，新增约数百块不影响性能。
+- 边界：若重建后块数异常或章节解析异常，仅做最小修正（如标题 OCR 噪声不影响检索，可不处理）。
 
 ## 目录结构（本次改动）
+```
+skills/saig-spu-rag/
+├── SKILL.md                              # [MODIFY] description/数据源/何时使用/references 数量，纳入旅游产品手册
+├── references/
+│   └── 2026武汉旅游产品手册md.md          # [KEEP] 新增的第 5 份数据源（已存在）
+├── scripts/
+│   └── build_index.py                    # [KEEP] 自动扫描 references/*.md，无需改代码
+└── data/
+    ├── chunks.json                       # [REGENERATE] 重建后包含新手册分块
+    └── index.json                        # [REGENERATE] 重建后的 BM25 倒排索引
+```
 
-- `agents/jing-xiao-wu.md` [MODIFY]：回答风格自然化、去内部引用、补新参数示例与最小适配原则。
-- `skills/saig-spu-rag/SKILL.md` [MODIFY]：检索内部化、自然作答口径。
-- `skills/wuhan-guide/scripts/query_route.py` [MODIFY]：新增 exclude/replace/half/hours/area/theme 可选参数与小函数，复用现有链路。
-- `skills/wuhan-guide/SKILL.md` [MODIFY]：新参数说明与最小适配原则。
-- 不改动：`guide_common.py`、`assets/wuhan-guide-map.html`、`assets/spots.json`、`saig-spu-rag/scripts/retrieve.py`、`tools/gen_route_docs.py`、`tools/pack_expert.py`。
 
-## Agent 扩展
-
+## Agent Extensions
 ### Skill
-
 - **skill-creator**
-- 用途：按技能编写最佳实践更新 `skills/wuhan-guide/SKILL.md`，确保 frontmatter、参数说明、最小适配原则结构规范。
-- 预期结果：产出与现有 `query_route.py` 一致、可被 Agent 正确调用的技能文档。
+  - 用途：按技能编写最佳实践修订 `skills/saig-spu-rag/SKILL.md`，确保 frontmatter description、数据源、何时使用、资源说明结构规范一致。
+  - 预期结果：产出一份准确覆盖 5 份 Markdown 数据源、触发场景完整、与现有「自然作答、不展示来源」口径一致的 SKILL.md。
