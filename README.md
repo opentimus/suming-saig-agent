@@ -8,11 +8,8 @@ Agent 型（单个 AI 专家）
 
 ## 功能
 
-- 介绍武汉城市历史与文化（自然地理、建置沿革、地方人文、社会经济）
-- 武汉景区与旅游咨询（景点详情、玩法、季节主题、对比取舍、讲解词）
-- 武汉导览（单页双视图：离线交互地图，页面 + 同目录底图两个文件，含可拖动平移的手绘底图 + 由 `spots.json` 驱动的「编号 + 名称」DOM 景点标签 + G1–G9 多选线路筛选（选中后地图自动居中到该组景点，底部行程卡片只显示选中组）；右上角「编辑景点」可拖动定位、点击空白新增、点选改名称／类型／简介／所属线路或删除，改动保存在本机浏览器并可导出／导入 JSON；底部行程区固定展开、不可折叠：全景导览时显示引导占位，在线路查询时按 G1–G9 每组一张卡片（标题带 G 代号）、组内紧凑单列列出景点，上方筛选与卡片一一联动，每组右上角「+」可加景点、每行「×」可删景点（仅当页生效，区内不重复放线路按钮）。两种模式共用同一个 `wuhan-guide.html`，同名覆盖、各自只执行一次脚本）
-- 介绍数命SPU社区
-- 介绍数命SPU与SAIG国际AI大赛
+- 知识库检索问答（`saig-spu-rag` 技能）：数命SPU（超级个体单元）定义、能力模型、数命SPU社区，SAIG 国际AI大赛赛制/报名/奖项，以及《武汉概览》中的武汉地理、人口、经济、产业、文旅等城市背景与单景点详情、玩法、讲解词——统一由本地 BM25 知识库检索承接，返回带来源／章节／页码的证据块。
+- 武汉导览（`wuhan-guide` 技能）：单页双视图——离线交互地图（页面 + 同目录底图两个文件，含可拖动平移的手绘底图 + 由 `spots.json` 驱动的「编号 + 名称」DOM 景点标签 + G1–G9 多选线路筛选；右上角「编辑景点」可拖动定位、点击空白新增、点选改名称／类型／简介／所属线路或删除，改动保存在本机浏览器并可导出／导入 JSON；底部行程区固定展开、不可折叠：全景导览时显示引导占位，线路查询时按 G1–G9 每组一张卡片、组内紧凑单列列出景点，上方筛选与卡片一一联动，每组右上角「+」可加景点、每行「×」可删景点）与武汉几日游／线路代号／景点反查／行程单查询（同名单页底部行程面板按 G 分组铺开行程卡片）。两种模式共用同一个 `wuhan-guide.html`，同名覆盖、各自只执行一次脚本。
 
 > 点到点导航、实时路况、驾车/公交具体走法不在本专家能力范围内。
 
@@ -35,14 +32,11 @@ Agent 型（单个 AI 专家）
 
 ```
 <repo>/                             # 仓库根目录（安装时整体作为插件目录）
-├── .codebuddy-plugin/plugin.json   # 插件清单：声明 1 个 agent 与 5 个 skill
+├── .codebuddy-plugin/plugin.json   # 插件清单：声明 1 个 agent 与 2 个 skill
 ├── agents/jing-xiao-wu.md          # 唯一的 agent 定义（路由与回答档位）
 ├── skills/                         # 每个子目录是一个可独立安装的技能
-│   ├── wuhan-guide/                # 武汉导览：离线地图 + 行程卡片
-│   ├── wuhan-scenic-intro/         # 武汉景区咨询（含 G1-G9 线路概览）
-│   ├── wuhan-intro/                # 武汉城市历史与地情
-│   ├── shuming-spu-intro/          # 数命SPU 社区
-│   └── saig-intro/                 # SAIG 国际AI大赛
+│   ├── saig-spu-rag/               # 知识库检索：数命SPU/社区、SAIG 大赛、《武汉概览》本地 BM25 RAG
+│   └── wuhan-guide/                # 武汉导览：离线地图 + 行程卡片
 ├── tools/                          # 仓库级维护脚本（不随技能安装）
 ├── avatars/expert.png
 └── dist/                           # tools/pack_expert.py 的打包产物（不入库）
@@ -69,14 +63,10 @@ agent 与技能，**不需要**额外的注册脚本。仓库内所有文档与�
 `tools/` 下的脚本处理跨技能的一致性，修改对应文件后各跑一次校验并在提交前同步：
 
 ```bash
-# Dify 公共客户端：唯一实现 → 4 个技能副本
-python3 tools/sync_dify_client.py --write    # 改完 tools/dify_client.py 后同步
-python3 tools/sync_dify_client.py --check    # 校验副本是否漂移
-
 # 线路参考文档：由接口数据生成，禁止手改
 python3 tools/gen_route_docs.py --snapshot   # 联网拉「旅遊线路」表全量写入 tools/route_snapshot.json
-python3 tools/gen_route_docs.py --write      # 用快照重生成 route_codes.md / route_overview.md
-python3 tools/gen_route_docs.py --check      # 校验两份文档与快照一致
+python3 tools/gen_route_docs.py --write      # 用快照重生成 wuhan-guide/references/route_codes.md
+python3 tools/gen_route_docs.py --check      # 校验文档与快照一致
 
 # 模板默认块：让「直接打开模板」与生成产物共用同一份 spots.json 快照
 python3 tools/sync_template_defaults.py --write   # 改完 spots.json 后刷新模板默认块
@@ -98,7 +88,7 @@ python3 tools/pack_expert.py --out /tmp/x.zip
 ```
 
 脚本会先校验 `plugin.json` 的 `name` 与 `agentName` 一致、`agents`/`skills`/`avatar`
-指向的文件真实存在，再跑三项数据一致性校验（Dify 副本、线路文档、模板默认块），
+指向的文件真实存在，再跑两项数据一致性校验（线路文档、模板默认块），
 任一漂移即中止，避免把过期数据发出去。产出的 zip 可直接在 WorkBuddy 里上传安装。
 
 ## 开源协议

@@ -11,7 +11,7 @@ WorkBuddy 的专家包就是「插件目录」本身：zip 根目录下必须有
     python3 tools/pack_expert.py --out /tmp/x.zip
     python3 tools/pack_expert.py --list          # 只打印将被打包的文件
 
-打包前会自动跑三项一致性校验（Dify 副本、线路文档、模板默认块），任一漂移即中止，
+打包前会自动跑两项一致性校验（线路文档、模板默认块），任一漂移即中止，
 避免把过期数据发出去。
 """
 
@@ -48,7 +48,6 @@ EXCLUDE_SUFFIXES = {".pyc", ".pyo"}
 EXCLUDE_NAMES = {".DS_Store", ".env", ".gitignore"}
 
 CHECKS = (
-    ("Dify 副本", ["tools/sync_dify_client.py", "--check"]),
     ("线路文档", ["tools/gen_route_docs.py", "--check"]),
     ("模板默认块", ["tools/sync_template_defaults.py", "--check"]),
 )

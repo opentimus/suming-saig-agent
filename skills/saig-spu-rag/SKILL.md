@@ -1,0 +1,66 @@
+---
+name: saig-spu-rag
+description: "检索「数命SPU / SAIG 数命SPU 国际AI大赛」与《武汉概览》资料的自包含知识库技能。当提问涉及数命科技、SPU（超级个体单元）、数命SPU社区、SAIG大赛赛制/报名/奖项，或《武汉概览》中的武汉地理、人口、经济、产业、文旅等背景信息时使用。该技能以 references/ 下的 Markdown 文档为唯一数据源，通过本地 BM25 索引快速检索，返回带来源与章节的证据块，供作答时引用，避免凭空编造。"
+agent_created: true
+---
+
+# 数命SPU / SAIG 知识库检索
+
+## 目的
+
+把技能自带的 Markdown 文档封装为可离线、可独立分发的小型知识库：构建期一次性分块并建立索引，运行期毫秒级返回最相关的证据块并标注来源，供作答引用，避免编造。
+
+## 数据源
+
+唯一事实源是 `references/` 目录下的 Markdown 附件，直接读取，不依赖任何外部文件或本地路径清单：
+
+- `references/数命SPU说明.md` —— SPU 概念、五项核心能力、数命科技实践
+- `references/数命SPU社区说明.md` —— 社区定位、人才培养、FDE/OPC 路径
+- `references/SAIG数命SPU国际AI大赛说明.md` —— 大赛背景、赛制、报名与奖项、时间安排
+- `references/武汉概览.md` —— 武汉地理、人口、经济、产业、文旅、风景名胜等背景
+
+## 何时使用
+
+出现以下任一情形时使用：
+
+- 询问「SPU 是什么 / 五项核心能力 / 数命科技怎么实践」
+- 询问「数命 SPU 社区 / FDE / OPC / 一人公司」
+- 询问「SAIG 大赛 / 赛制 / 报名 / 奖项 / 时间安排」
+- 询问《武汉概览》中的武汉背景（地理、人口、GDP、产业、景点、文化等）
+- 要求「根据大赛材料 / 竞赛资料回答、归纳、对比」
+
+## 使用步骤
+
+1. 以用户问题原文作为查询，调用检索脚本：
+
+   ```bash
+   python3 scripts/retrieve.py "用户的问题原文" 6
+   ```
+
+2. 读取返回的 JSON（按相关度降序）：每条含 `id / source / section / page / score / text`。其中 `source` 为 Markdown 文件名，`section` 为章节标题；Markdown 无页码，`page` 恒为 `null`。
+3. 仅基于返回的 `text` 作答，不引入材料外的信息。
+4. 作答时标注来源：写明来源文件名与 `section` 章节。
+5. 结果为空或明显不相关时，换一种问法或补充关键词重试；仍无果则如实说明材料未覆盖该问题。
+
+## 说明
+
+- 检索为纯词频 BM25（中文「单字 + 二元组」分词），纯 Python 标准库实现，无需联网、无需第三方依赖。
+- 知识库为预构建产物：`data/chunks.json` 与 `data/index.json`。修改 `references/*.md` 后，运行 `python3 scripts/build_index.py` 重建索引与数据。
+- 构建脚本自动扫描 `references/` 下全部 `.md` 文件，新增或替换文档无需改动代码。
+- 检索召回依赖查询与文档的词汇重叠；涉及同义改写时，可在查询中补充关键词以提升召回。
+
+## 资源
+
+### scripts/
+
+- `build_index.py` —— 扫描 `references/*.md`、Markdown 感知分块并构建 BM25 索引（构建期一次性运行）。
+- `retrieve.py` —— 运行期检索入口，入参为查询字符串与可选 top_k，输出 JSON。
+
+### references/
+
+- 上述 4 份 Markdown 文档，既是检索数据源，也可直接阅读以补充上下文。
+
+### data/
+
+- `chunks.json` —— 分块及其来源、章节元数据。
+- `index.json` —— BM25 倒排索引。

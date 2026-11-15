@@ -2,7 +2,7 @@
 name: wuhan-guide
 display_name: 武汉导览
 display_name_en: Wuhan Guide
-description: 当用户表达「武汉全景导览」或「武汉线路／行程查询」两类意图时使用。全景导览输出离线交互地图 HTML（可拖动手绘底图 + 由 spots.json 驱动的橙金编号 DOM 标签 + G1–G9 多选高亮 + 景点简介弹窗 + 可视化景点编辑模式）与按片区编号清单，零接口调用、零网络请求；线路查询按 G1–G9 代号调用接口，输出结构化文字行程单，并在同一张页面底部的固定行程面板里按 G 分组铺开对应线路的行程卡片。两种模式共用同一份模板与同一个 ASCII 文件名 wuhan-guide.html，同名幂等覆盖，各自只执行一次脚本调用。单个景点详情交给 wuhan-scenic-intro，城市地情交给 wuhan-intro。
+description: 当用户表达「武汉全景导览」或「武汉线路／行程查询」两类意图时使用。全景导览输出离线交互地图 HTML（可拖动手绘底图 + 由 spots.json 驱动的橙金编号 DOM 标签 + G1–G9 多选高亮 + 景点简介弹窗 + 可视化景点编辑模式）与按片区编号清单，零接口调用、零网络请求；线路查询按 G1–G9 代号调用接口，输出结构化文字行程单，并在同一张页面底部的固定行程面板里按 G 分组铺开对应线路的行程卡片。两种模式共用同一份模板与同一个 ASCII 文件名 wuhan-guide.html，同名幂等覆盖，各自只执行一次脚本调用。单个景点详情、城市地情、社区与大赛介绍等检索类问题交给 saig-spu-rag。
 description_zh: 「武汉全景导览」与「武汉线路／行程查询」的统一入口：一张单页双视图（离线交互地图 + 底部固定行程面板）；导览零接口只给路径与清单，线路一次调用同时产出文字行程单与同名单页；地图支持本地可视化编辑景点。
 description_en: Unified entry for "Wuhan panorama tour" and "Wuhan itinerary query" intents. Emits one offline single-page dual-view deliverable: a data-driven interactive spot map with a local visual editor plus a bottom itinerary drawer. The panorama mode makes zero API calls; the route mode makes exactly one call and writes the same wuhan-guide.html with itinerary cards.
 examples_zh:
@@ -48,9 +48,9 @@ allowed-tools: Bash(python3)
 
 | 情况 | 交给谁 |
 | --- | --- |
-| 单个景点详情、玩法、季节主题、景点对比、讲解词 | `wuhan-scenic-intro` |
-| 城市历史、地理、人口经济等地方志内容 | `wuhan-intro` |
-| 社区与大赛介绍 | `shuming-spu-intro` / `saig-intro` |
+| 单个景点详情、玩法、季节主题、景点对比、讲解词 | `saig-spu-rag` |
+| 城市历史、地理、人口经济等《武汉概览》背景内容 | `saig-spu-rag` |
+| 数命SPU 社区、SAIG 大赛介绍 | `saig-spu-rag` |
 | 点到点导航、实时路况、具体交通走法 | 不在能力范围内，如实说明 |
 
 判断要点：要的是**可操作的地图视图**走 `map`；要的是**线路安排／行程单**走 `route`。两者同时出现时按用户主要诉求择一，不自动串联第二个脚本。

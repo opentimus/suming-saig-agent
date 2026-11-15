@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 武汉海辞科技有限公司
-"""由「旅遊线路」表生成两份线路参考文档，消除重复维护与计数漂移。
+"""由「旅遊线路」表生成线路参考文档，消除重复维护与计数漂移。
 
 单一事实源是接口数据（可离线用 tools/route_snapshot.json 快照）。本脚本据此生成：
     skills/wuhan-guide/references/route_codes.md       代号字典 / 衔接链 / N 日游 / 景点反查
-    skills/wuhan-scenic-intro/references/route_overview.md  路线速览 / 各线简介 / 景点反查
 
 用法:
     python3 tools/gen_route_docs.py --snapshot      # 联网拉全量并刷新快照
-    python3 tools/gen_route_docs.py --write         # 用快照重新生成两份 md
+    python3 tools/gen_route_docs.py --write         # 用快照重新生成 route_codes.md
     python3 tools/gen_route_docs.py --check         # 只校验 md 是否与快照一致
 
-为什么需要它：两份文档此前各自硬编码了线路名、景点清单与条数（68 条、G2 11 个点位等），
-后台数据一旦调整就会同时失真。改为生成后，改数据只需 --snapshot + --write。
+为什么需要它：文档此前硬编码了线路名、景点清单与条数（68 条、G2 11 个点位等），
+后台数据一旦调整就会失真。改为生成后，改数据只需 --snapshot + --write。
 
 接口过滤条件在服务端不生效（详见 skills/wuhan-guide/references/api_reference.md），
 因此这里拉全量、在本地按「路线代号」分组，并按「排序」升序排列。
@@ -30,7 +29,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT = ROOT / "tools" / "route_snapshot.json"
 CODES_DOC = ROOT / "skills" / "wuhan-guide" / "references" / "route_codes.md"
-OVERVIEW_DOC = ROOT / "skills" / "wuhan-scenic-intro" / "references" / "route_overview.md"
 
 SPDX = "<!-- SPDX-License-Identifier: GPL-3.0-only | Copyright (C) 2026 武汉海辞科技有限公司 -->\n"
 
@@ -186,57 +184,11 @@ def _route_codes(grouped: "OrderedDict[str, list]") -> str:
     return "\n".join(out)
 
 
-def _overview(grouped: "OrderedDict[str, list]") -> str:
-    ordered = _code_order(grouped)
-
-    out = [SPDX, "# 武汉 G1-G9 路线概览\n",
-           "> 本文件由 `tools/gen_route_docs.py` 生成，请勿手改；与 wuhan-guide 的线路查询模式同源（aoaerp「旅遊线路」表）。",
-           "> 介绍 G1-G9 路线或查询景点所属路线时直接查阅本文件，无需调用接口。\n",
-           "## 路线速览\n",
-           "| 代号 | 线路名 | 类型 | 起止片区 | 景点数 | 参考总时长 |",
-           "| --- | --- | --- | --- | --- | --- |"]
-    for code in ordered:
-        rows = grouped[code]
-        areas = sorted({row["area"] for row in rows if row["area"]})
-        out.append(
-            f"| {code} | {rows[0]['route_name']} | {LINE_KIND.get(code, '支线')} | "
-            f"{'、'.join(areas)} | {len(rows)} | {_fmt_hours(_hours([r['stay'] for r in rows]))} |"
-        )
-
-    out += ["", "## 各线路简介\n"]
-    for code in ordered:
-        rows = grouped[code]
-        areas = sorted({row["area"] for row in rows if row["area"]})
-        names = [row["name"] for row in rows]
-        lead = "、".join(names[:4])
-        tail = "等" if len(names) > 4 else ""
-        out += [
-            f"### {code} {rows[0]['route_name']}",
-            "",
-            f"起止片区：{'、'.join(areas) or '-'}；串联 {lead}{tail}，共 {len(names)} 处点位。",
-            "",
-            f"- 参考总时长：{_fmt_hours(_hours([r['stay'] for r in rows]))} ｜ 景点数：{len(names)} ｜ 起止片区：{'、'.join(areas)}",
-            "",
-            "| 景点 | 类型 | 停留 | 推荐指数 |",
-            "| --- | --- | --- | --- |",
-        ]
-        for row in rows:
-            out.append(f"| {row['name']} | {row['type'] or '-'} | {row['stay'] or '-'} | {row['stars'] or '-'} |")
-        out.append("")
-
-    out += ["## 景点 → 路线速查\n", "| 景点 | 所属代号 | 所属线路 |", "| --- | --- | --- |"]
-    for code in ordered:
-        for row in grouped[code]:
-            out.append(f"| {row['name']} | {code} | {row['route_name']} |")
-    out.append("")
-    return "\n".join(out)
-
-
 def build(rows: list) -> dict:
     grouped = normalize(rows)
     if not grouped:
         raise SystemExit("快照中没有可用的线路记录")
-    return {CODES_DOC: _route_codes(grouped), OVERVIEW_DOC: _overview(grouped)}
+    return {CODES_DOC: _route_codes(grouped)}
 
 
 def main() -> int:
@@ -269,7 +221,7 @@ def main() -> int:
                 print(f"漂移：{path.relative_to(ROOT)}", file=sys.stderr)
             print("文档与快照不一致，请运行 --write", file=sys.stderr)
             return 1
-        print("校验通过：两份线路文档与快照一致")
+        print("校验通过：线路文档与快照一致")
         return 0
 
     for path, text in docs.items():
