@@ -308,7 +308,27 @@ def _apply_map_image(html: str, *, path: Path, inline_image: bool) -> tuple:
         html = MAP_IMAGE_SRC_RE.sub(
             lambda m: f"{m.group(1)}{MAP_IMAGE.name}{m.group(3)}", html, count=1
         )
+    if _same_file_content(target, MAP_IMAGE):
+        return html, None   # 目标已有同一张底图：省掉每次约 850KB 的重复写入
     return html, target
+
+
+def _same_file_content(left: Path, right: Path) -> bool:
+    """大小 + mtime 校验，避免把未变化的 850KB 底图重写一遍。
+
+    底图是用 shutil.copy2 复制的，会保留源文件 mtime，因此「大小与 mtime 都相同」
+    足以判定为同一张图；不读文件内容，省掉每次约 1.7MB 的读盘。
+    """
+    try:
+        if not left.is_file():
+            return False
+        left_stat, right_stat = left.stat(), right.stat()
+    except OSError:
+        return False
+    return (
+        left_stat.st_size == right_stat.st_size
+        and int(left_stat.st_mtime) == int(right_stat.st_mtime)
+    )
 
 
 def render_page(*, cards_css: str, cards_html: str, mode: str,

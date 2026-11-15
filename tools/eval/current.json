@@ -1,0 +1,1176 @@
+{
+ "generated_at": "2026-11-15T22:49:46",
+ "eval_set": "tools/eval/rag_eval_set.json",
+ "eval_set_sha256": "22848544c4d3eed0",
+ "engine": {
+  "retrieve": "skills/saig-spu-rag/scripts/retrieve.py",
+  "retrieve_sha256": "ba1d9b55bbc6fd02",
+  "index_sha256": "1ef9ade1b12e633a"
+ },
+ "metrics": {
+  "in_scope": 26,
+  "out_scope": 4,
+  "recall@1": 0.8077,
+  "recall@3": 1.0,
+  "recall@5": 1.0,
+  "mrr@5": 0.8974,
+  "out_of_scope_fp_rate": 0.0,
+  "errors": 0,
+  "avg_seconds": 0.548,
+  "top_k": 5
+ },
+ "records": [
+  {
+   "query": "磨山景区怎么玩",
+   "expect": [
+    {
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "磨山景区"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.569,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "磨山景区",
+     "score": 23.3493
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "磨山风景区",
+     "score": 13.6199
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "线路总览",
+     "score": 13.2985
+    },
+    {
+     "rank": 4,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "东湖绿道",
+     "score": 12.7717
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "06湖光山色",
+     "score": 10.6725
+    }
+   ]
+  },
+  {
+   "query": "东湖樱花园什么时候开花",
+   "expect": [
+    {
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "东湖樱舞"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.522,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "东湖樱舞：东湖樱花园",
+     "score": 29.1483
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "东湖樱花园",
+     "score": 28.969
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "旅行 Tips",
+     "score": 18.1919
+    },
+    {
+     "rank": 4,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "东湖荷园",
+     "score": 16.7961
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "线路总览",
+     "score": 16.7741
+    }
+   ]
+  },
+  {
+   "query": "热干面是什么",
+   "expect": [
+    {
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "热干面"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.586,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "热干面",
+     "score": 20.4044
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "户部巷美食街",
+     "score": 16.7827
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "蛋酒",
+     "score": 14.5102
+    },
+    {
+     "rank": 4,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "尚隆地球村",
+     "score": 11.1769
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "山海关路",
+     "score": 10.2135
+    }
+   ]
+  },
+  {
+   "query": "湖北省博物馆有哪些镇馆之宝",
+   "expect": [
+    {
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "湖北省博物馆"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.485,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "湖北省博物馆",
+     "score": 42.6744
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "湖北省博物馆 游览时间：3—3.5小时（含观赏演出）",
+     "score": 28.9981
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武汉博物馆",
+     "score": 28.7318
+    },
+    {
+     "rank": 4,
+     "source": "武汉概览.md",
+     "section": "【风景名胜】",
+     "score": 16.2564
+    },
+    {
+     "rank": 5,
+     "source": "武汉概览.md",
+     "section": "【文化旅游】",
+     "score": 7.4061
+    }
+   ]
+  },
+  {
+   "query": "辛亥革命博物院开放时间",
+   "expect": [
+    {
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "辛亥革命博物院"
+    }
+   ],
+   "first_rank": 2,
+   "seconds": 0.527,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "旅行Tips",
+     "score": 54.1884
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "辛亥革命博物院",
+     "score": 49.7984
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武昌首义文化旅游区",
+     "score": 39.6222
+    },
+    {
+     "rank": 4,
+     "source": "武汉概览.md",
+     "section": "【风景名胜】",
+     "score": 31.0306
+    },
+    {
+     "rank": 5,
+     "source": "武汉概览.md",
+     "section": "【历史沿革】",
+     "score": 8.9894
+    }
+   ]
+  },
+  {
+   "query": "两江游船在哪里坐",
+   "expect": [
+    {
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "两江游船"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.434,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "两江游船",
+     "score": 24.6694
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "黄浦路站",
+     "score": 16.2234
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "两江夜游",
+     "score": 11.8284
+    },
+    {
+     "rank": 4,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "旅行 Tips",
+     "score": 11.1106
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "长江荣耀号",
+     "score": 9.9377
+    }
+   ]
+  },
+  {
+   "query": "知音号演出怎么样",
+   "expect": [
+    {
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "知音号"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.478,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "知音号咖啡",
+     "score": 16.7226
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "在演艺名城，与知音相遇",
+     "score": 16.3132
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "知音号",
+     "score": 14.2259
+    },
+    {
+     "rank": 4,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "保元风云",
+     "score": 12.0305
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "黄浦路站",
+     "score": 10.5322
+    }
+   ]
+  },
+  {
+   "query": "武汉长江大桥什么时候建成",
+   "expect": [
+    {
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武汉长江大桥"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.426,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武汉长江大桥",
+     "score": 29.3606
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "琴台站",
+     "score": 19.8783
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "天兴洲长江大桥",
+     "score": 19.831
+    },
+    {
+     "rank": 4,
+     "source": "武汉概览.md",
+     "section": "【长江中游城市群合作】",
+     "score": 8.7672
+    },
+    {
+     "rank": 5,
+     "source": "武汉概览.md",
+     "section": "【天气灾害】",
+     "score": 8.2537
+    }
+   ]
+  },
+  {
+   "query": "木兰草原在哪里",
+   "expect": [
+    {
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "木兰草原"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.454,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "木兰草原",
+     "score": 29.149
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "木兰天池",
+     "score": 19.0853
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "木兰云雾山",
+     "score": 17.7101
+    },
+    {
+     "rank": 4,
+     "source": "武汉概览.md",
+     "section": "【风景名胜】",
+     "score": 12.9459
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "线路总览",
+     "score": 16.2793
+    }
+   ]
+  },
+  {
+   "query": "东湖绿道有多长",
+   "expect": [
+    {
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "东湖绿道"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.473,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "东湖绿道",
+     "score": 20.3899
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "东湖绿道二期",
+     "score": 20.3329
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "线路总览",
+     "score": 16.7433
+    },
+    {
+     "rank": 4,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "梨园站",
+     "score": 16.4442
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "东湖风景区 AAAAA",
+     "score": 16.0992
+    }
+   ]
+  },
+  {
+   "query": "武汉大学樱花怎么预约",
+   "expect": [
+    {
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "珞樱缤纷"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.454,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "珞樱缤纷：武汉大学",
+     "score": 32.3307
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武汉大学樱花大道",
+     "score": 30.2575
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武汉大学",
+     "score": 22.102
+    },
+    {
+     "rank": 4,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "旅行 Tips",
+     "score": 20.7383
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武汉大学万林艺术博物馆",
+     "score": 15.5651
+    }
+   ]
+  },
+  {
+   "query": "户部巷有什么好吃的",
+   "expect": [
+    {
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "户部巷美食街"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.601,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "户部巷美食街",
+     "score": 28.8512
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "攻略",
+     "score": 22.9013
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "吉庆民俗街",
+     "score": 20.0237
+    },
+    {
+     "rank": 4,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "糯米鸡",
+     "score": 18.0582
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "水塔美食街",
+     "score": 17.6448
+    }
+   ]
+  },
+  {
+   "query": "武汉有多少人口",
+   "expect": [
+    {
+     "source": "武汉概览.md",
+     "section": "人口分布"
+    }
+   ],
+   "first_rank": 2,
+   "seconds": 0.442,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "武汉概览.md",
+     "section": "【地震情况】",
+     "score": 14.4931
+    },
+    {
+     "rank": 2,
+     "source": "武汉概览.md",
+     "section": "【人口分布】",
+     "score": 9.4518
+    },
+    {
+     "rank": 3,
+     "source": "武汉概览.md",
+     "section": "【民族宗教】",
+     "score": 7.8205
+    },
+    {
+     "rank": 4,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武汉美术馆 汉口馆",
+     "score": 1.7753
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "汉口粤汉码头出发",
+     "score": 1.7459
+    }
+   ]
+  },
+  {
+   "query": "武汉的地理位置",
+   "expect": [
+    {
+     "source": "武汉概览.md",
+     "section": "地理位置"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.448,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "武汉概览.md",
+     "section": "【地理位置】",
+     "score": 31.2752
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武汉武昌万象城",
+     "score": 20.7639
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "沙湖公园",
+     "score": 15.3078
+    },
+    {
+     "rank": 4,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "线路总览",
+     "score": 13.3595
+    },
+    {
+     "rank": 5,
+     "source": "武汉概览.md",
+     "section": "【历史沿革】",
+     "score": 7.0655
+    }
+   ]
+  },
+  {
+   "query": "武汉有哪些风景名胜",
+   "expect": [
+    {
+     "source": "武汉概览.md",
+     "section": "风景名胜"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.451,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "武汉概览.md",
+     "section": "【风景名胜】",
+     "score": 26.9695
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武汉东湖海洋世界",
+     "score": 12.219
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武汉大禹文化博物馆",
+     "score": 9.1626
+    },
+    {
+     "rank": 4,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "龙泉山",
+     "score": 7.3231
+    },
+    {
+     "rank": 5,
+     "source": "武汉概览.md",
+     "section": "【行政建置】",
+     "score": 3.4986
+    }
+   ]
+  },
+  {
+   "query": "武汉气候怎么样",
+   "expect": [
+    {
+     "source": "武汉概览.md",
+     "section": "气象"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.461,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "武汉概览.md",
+     "section": "【气象】",
+     "score": 5.8392
+    },
+    {
+     "rank": 2,
+     "source": "武汉概览.md",
+     "section": "【天气灾害】",
+     "score": 2.0593
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "线路总览",
+     "score": 1.7656
+    },
+    {
+     "rank": 4,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "攻略",
+     "score": 1.6656
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "过早宵夜，场舌尖的汉味狂欢",
+     "score": 1.5918
+    }
+   ]
+  },
+  {
+   "query": "武汉历史沿革",
+   "expect": [
+    {
+     "source": "武汉概览.md",
+     "section": "历史沿革"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.442,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "武汉概览.md",
+     "section": "【历史沿革】",
+     "score": 28.9076
+    },
+    {
+     "rank": 2,
+     "source": "武汉概览.md",
+     "section": "【行政建置】",
+     "score": 11.3564
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "江汉路",
+     "score": 9.89
+    },
+    {
+     "rank": 4,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武商 MALL",
+     "score": 9.7155
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "中山公园",
+     "score": 9.5558
+    }
+   ]
+  },
+  {
+   "query": "武汉交通运输情况",
+   "expect": [
+    {
+     "source": "武汉概览.md",
+     "section": "交通运输"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.444,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "武汉概览.md",
+     "section": "【交通运输和邮电通信】",
+     "score": 29.1892
+    },
+    {
+     "rank": 2,
+     "source": "武汉概览.md",
+     "section": "【天气灾害】",
+     "score": 9.8038
+    },
+    {
+     "rank": 3,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武汉科学技术馆",
+     "score": 6.1388
+    },
+    {
+     "rank": 4,
+     "source": "武汉概览.md",
+     "section": "【武汉城市圈一体化建设】",
+     "score": 5.4595
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武汉一号高炉国家工业遗址公园",
+     "score": 5.3851
+    }
+   ]
+  },
+  {
+   "query": "武汉工业发展情况",
+   "expect": [
+    {
+     "source": "武汉概览.md",
+     "section": "工业和建筑业"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.538,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "武汉概览.md",
+     "section": "【工业和建筑业】",
+     "score": 14.7925
+    },
+    {
+     "rank": 2,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武汉一号高炉国家工业遗址公园",
+     "score": 13.1137
+    },
+    {
+     "rank": 3,
+     "source": "武汉概览.md",
+     "section": "【固定资产投资】",
+     "score": 12.5813
+    },
+    {
+     "rank": 4,
+     "source": "武汉概览.md",
+     "section": "【地震情况】",
+     "score": 10.8385
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "武钢博物馆",
+     "score": 10.3826
+    }
+   ]
+  },
+  {
+   "query": "什么是SPU",
+   "expect": [
+    {
+     "source": "数命SPU说明.md",
+     "section": "数命SPU说明"
+    }
+   ],
+   "first_rank": 2,
+   "seconds": 0.49,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "数命SPU社区说明.md",
+     "section": "数命SPU社区说明",
+     "score": 7.965
+    },
+    {
+     "rank": 2,
+     "source": "数命SPU说明.md",
+     "section": "数命SPU说明",
+     "score": 7.8273
+    },
+    {
+     "rank": 3,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "SAIG数命SPU国际AI大赛说明",
+     "score": 7.8081
+    },
+    {
+     "rank": 4,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "城市AI接待员探索",
+     "score": 7.1646
+    },
+    {
+     "rank": 5,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "赛事时间安排",
+     "score": 5.9155
+    }
+   ]
+  },
+  {
+   "query": "SPU五项核心能力是什么",
+   "expect": [
+    {
+     "source": "数命SPU说明.md",
+     "section": "数命SPU说明"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.589,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "数命SPU说明.md",
+     "section": "数命SPU说明",
+     "score": 26.2678
+    },
+    {
+     "rank": 2,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "城市AI接待员探索",
+     "score": 20.6961
+    },
+    {
+     "rank": 3,
+     "source": "数命SPU社区说明.md",
+     "section": "数命SPU社区说明",
+     "score": 14.3344
+    },
+    {
+     "rank": 4,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "SAIG数命SPU国际AI大赛说明",
+     "score": 11.5274
+    }
+   ]
+  },
+  {
+   "query": "数命SPU社区是什么",
+   "expect": [
+    {
+     "source": "数命SPU社区说明.md",
+     "section": "数命SPU社区说明"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.668,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "数命SPU社区说明.md",
+     "section": "数命SPU社区说明",
+     "score": 26.2094
+    },
+    {
+     "rank": 2,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "SAIG数命SPU国际AI大赛说明",
+     "score": 22.6868
+    },
+    {
+     "rank": 3,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "赛事时间安排",
+     "score": 19.7044
+    },
+    {
+     "rank": 4,
+     "source": "数命SPU说明.md",
+     "section": "数命SPU说明",
+     "score": 19.5713
+    },
+    {
+     "rank": 5,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "城市AI接待员探索",
+     "score": 17.6709
+    }
+   ]
+  },
+  {
+   "query": "FDE和OPC是什么",
+   "expect": [
+    {
+     "source": "数命SPU社区说明.md",
+     "section": "数命SPU社区说明"
+    }
+   ],
+   "first_rank": 3,
+   "seconds": 0.788,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "城市AI接待员探索",
+     "score": 11.4516
+    },
+    {
+     "rank": 2,
+     "source": "数命SPU说明.md",
+     "section": "数命SPU说明",
+     "score": 6.7388
+    },
+    {
+     "rank": 3,
+     "source": "数命SPU社区说明.md",
+     "section": "数命SPU社区说明",
+     "score": 5.3832
+    }
+   ]
+  },
+  {
+   "query": "SAIG大赛怎么报名",
+   "expect": [
+    {
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "第一阶段"
+    }
+   ],
+   "first_rank": 2,
+   "seconds": 0.714,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "SAIG数命SPU国际AI大赛说明",
+     "score": 26.8042
+    },
+    {
+     "rank": 2,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "第一阶段 线上赛",
+     "score": 14.6639
+    },
+    {
+     "rank": 3,
+     "source": "武汉概览.md",
+     "section": "【教育和科学技术】",
+     "score": 11.5023
+    },
+    {
+     "rank": 4,
+     "source": "数命SPU社区说明.md",
+     "section": "数命SPU社区说明",
+     "score": 11.1307
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "珞樱缤纷：武汉大学",
+     "score": 7.5147
+    }
+   ]
+  },
+  {
+   "query": "SAIG大赛时间安排",
+   "expect": [
+    {
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "赛事时间安排"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 1.084,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "赛事时间安排",
+     "score": 30.4854
+    },
+    {
+     "rank": 2,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "SAIG数命SPU国际AI大赛说明",
+     "score": 19.9336
+    },
+    {
+     "rank": 3,
+     "source": "数命SPU社区说明.md",
+     "section": "数命SPU社区说明",
+     "score": 9.8706
+    },
+    {
+     "rank": 4,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "楚河汉街",
+     "score": 8.453
+    },
+    {
+     "rank": 5,
+     "source": "2026武汉旅游产品手册md.md",
+     "section": "旅行 Tips",
+     "score": 8.3019
+    }
+   ]
+  },
+  {
+   "query": "SAIG大赛线下赛什么时候",
+   "expect": [
+    {
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "第二阶段"
+    }
+   ],
+   "first_rank": 1,
+   "seconds": 0.527,
+   "error": "",
+   "got": [
+    {
+     "rank": 1,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "第二阶段 线下赛",
+     "score": 23.868
+    },
+    {
+     "rank": 2,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "SAIG数命SPU国际AI大赛说明",
+     "score": 23.0559
+    },
+    {
+     "rank": 3,
+     "source": "SAIG数命SPU国际AI大赛说明.md",
+     "section": "赛事时间安排",
+     "score": 17.012
+    },
+    {
+     "rank": 4,
+     "source": "数命SPU社区说明.md",
+     "section": "数命SPU社区说明",
+     "score": 9.8706
+    }
+   ]
+  },
+  {
+   "query": "推荐一部好看的科幻电影",
+   "expect": [],
+   "first_rank": 0,
+   "seconds": 0.617,
+   "error": "",
+   "got": []
+  },
+  {
+   "query": "帮我订一张去北京的高铁票",
+   "expect": [],
+   "first_rank": 0,
+   "seconds": 0.579,
+   "error": "",
+   "got": []
+  },
+  {
+   "query": "股票怎么开户",
+   "expect": [],
+   "first_rank": 0,
+   "seconds": 0.623,
+   "error": "",
+   "got": []
+  },
+  {
+   "query": "怎么写一个Python爬虫",
+   "expect": [],
+   "first_rank": 0,
+   "seconds": 0.533,
+   "error": "",
+   "got": []
+  }
+ ]
+}

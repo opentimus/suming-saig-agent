@@ -9,7 +9,7 @@
     python3 query_route.py --find 黄鹤楼  # 按景点名反查所属线路
     python3 query_route.py --all         # 导出全部 9 条线路
     python3 query_route.py --days 2 --exclude 黄鹤楼 --hours 8   # 排除景点并按时长裁剪
-    python3 query_route.py G1 G2 --replace 东湖=汉街             # 线路内替换景点
+    python3 query_route.py G1 G2 --replace 东湖=汉街             # 线路内替换景点（精确名）
     python3 query_route.py --all --area 汉口 --theme 夜景         # 按片区/主题筛选
     python3 query_route.py --days 2 --preselect G1               # 页面默认只预选 G1
 
@@ -31,6 +31,7 @@
 
 import argparse
 import base64
+import hashlib
 import html
 import json
 import os
@@ -39,6 +40,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -348,40 +350,128 @@ def code_of_token(token: str):
     return NAME_TO_CODE.get(token)
 
 
-def apply_replacements(records: list, all_records: list, specs) -> tuple:
-    """在所选记录内用数据集中已存在的景点替换旧景点，保持位置与所属代号。"""
-    messages = []
+def spot_names(rows: list) -> list:
+    """按出现顺序去重景点名，用于歧义提示与报错文案。"""
+    names = []
+    for r in rows:
+        if r["spot"] not in names:
+            names.append(r["spot"])
+    return names
+
+
+def locate_old_spots(result: list, old: str, scope: set) -> tuple:
+    """在所选线路内定位被替换景点：精确名优先、子串兜底。
+
+    返回 (命中的记录下标列表, 错误文案)；空列表 + 空错误表示找不到。
+    """
+    exact = [
+        i for i, r in enumerate(result)
+        if r["code"] in scope and r["spot"] == old
+    ]
+    if exact:
+        return exact, ""
+    loose = [
+        i for i, r in enumerate(result)
+        if r["code"] in scope and old and old in r["spot"]
+    ]
+    if not loose:
+        return [], ""
+    names = spot_names([result[i] for i in loose])
+    if len(names) > 1:
+        return [], f"--replace「{old}」匹配到多个景点：{'、'.join(names)}，请写完整景点名"
+    return loose, ""
+
+
+def locate_new_spot(all_records: list, new: str, prefer_codes: list) -> tuple:
+    """在全量数据中定位替换目标：精确名优先、子串兜底，歧义时报错。
+
+    返回 (记录, 错误文案)；prefer_codes 决定同名景点出现在多条线路时取哪一条。
+    """
+    pool = [r for r in all_records if r["spot"] == new]
+    if not pool:
+        pool = [r for r in all_records if new and new in r["spot"]]
+        names = spot_names(pool)
+        if len(names) > 1:
+            return None, (
+                f"--replace 目标「{new}」匹配到多个景点：{'、'.join(names)}，请写完整景点名"
+            )
+    if not pool:
+        return None, f"--replace 目标「{new}」不在线路数据中"
+    for code in prefer_codes:
+        for r in pool:
+            if r["code"] == code:
+                return r, ""
+    return pool[0], ""
+
+
+def apply_replacements(records: list, all_records: list, specs, target_codes=None) -> tuple:
+    """在所选线路内用数据集中已存在的景点替换旧景点，保持位置与所属代号。
+
+    - 只在 target_codes 的线路内替换：卡片只渲染这些线路，改到别处等于没改；
+    - 被替换景点按「线路代号 + 精确景点名」定位，精确名找不到才用子串兜底，
+      子串命中多个不同景点时按歧义报错，避免「黄鹤楼」这类出现在景点名与点评
+      多处时被悄悄改错；
+    - 同一景点在多条线路重复出现时全部替换，不再命中第一处就停；
+    - 找不到被替换景点或替换目标时直接报错退出，不再提示成功。
+    """
+    messages, problems = [], []
     if not specs:
         return records, messages
+    scope = set(target_codes) if target_codes else {r["code"] for r in records}
+    ordered_scope = list(target_codes) if target_codes else sort_codes(scope)
     result = list(records)
     for spec in specs:
         if "=" not in (spec or ""):
-            messages.append(f"忽略无效 --replace「{spec}」，格式应为 旧=新")
+            problems.append(f"--replace「{spec}」格式无效，应为「旧=新」")
             continue
         old, new = (s.strip() for s in spec.split("=", 1))
         if not old or not new:
-            messages.append(f"忽略无效 --replace「{spec}」，格式应为 旧=新")
+            problems.append(f"--replace「{spec}」格式无效，应为「旧=新」")
             continue
-        new_rec = next((r for r in all_records if r["spot"] == new), None)
-        if new_rec is None:
-            new_rec = next((r for r in all_records if new in r["spot"]), None)
-        if new_rec is None:
-            messages.append(f"--replace 目标「{new}」不在线路数据中，已跳过")
+        if old == new:
+            messages.append(f"--replace「{old}={new}」新旧景点相同，已跳过")
             continue
-        replaced = False
-        for i, r in enumerate(result):
-            if old in r["spot"]:
-                moved = dict(new_rec)
-                moved["code"] = r["code"]
-                moved["order"] = r["order"]
-                moved["idx"] = r["idx"]
-                result[i] = moved
-                replaced = True
-                break
-        if replaced:
-            messages.append(f"已将「{old}」替换为「{new_rec['spot']}」")
+        indexes, problem = locate_old_spots(result, old, scope)
+        if problem:
+            problems.append(problem)
+            continue
+        if not indexes:
+            problems.append(
+                f"--replace 未在所选线路（{'、'.join(ordered_scope)}）中找到景点「{old}」"
+            )
+            continue
+        # 同名景点在多条线路都有时，优先取与被替换景点同线路的那条，其余按本次行程顺序
+        hit_code = result[indexes[0]]["code"]
+        prefer = [hit_code] + [c for c in ordered_scope if c != hit_code]
+        new_rec, problem = locate_new_spot(all_records, new, prefer)
+        if problem:
+            problems.append(problem)
+            continue
+        # 子串兜底命中时如实回显实际被替换的景点名，避免提示与页面不符
+        hit_names = spot_names([result[i] for i in indexes])
+        if hit_names == [old]:
+            label = old
         else:
-            messages.append(f"--replace 未找到被替换景点「{old}」，已跳过")
+            label = f"{old}（实际匹配：{'、'.join(hit_names)}）"
+        touched = []
+        for i in indexes:
+            r = result[i]
+            moved = dict(new_rec)
+            moved["code"] = r["code"]
+            moved["order"] = r["order"]
+            moved["idx"] = r["idx"]
+            result[i] = moved
+            if r["code"] not in touched:
+                touched.append(r["code"])
+        messages.append(
+            f"已将「{label}」替换为「{new_rec['spot']}」"
+            f"（{'、'.join(touched)} 共 {len(indexes)} 处）"
+        )
+    if problems:
+        raise SystemExit(
+            "--replace 未能生效，未生成页面：\n"
+            + "\n".join(f"  - {p}" for p in problems)
+        )
     return result, messages
 
 
@@ -478,12 +568,117 @@ def image_label(url: str):
 
 
 IMAGE_TIMEOUT = 15
-# 下载阶段放宽上限：原图再大也会被缩到 220px，决定 HTML 体积的是缩放结果而非原图。
+# 下载阶段放宽上限：原图再大也会被缩到 THUMB_SIZE，决定 HTML 体积的是缩放结果而非原图。
 # 此前 2MB 的上限会误杀约 14% 的大图（实测 198 张中 28 张），故放宽到 10MB。
 MAX_DOWNLOAD_BYTES = 10 * 1024 * 1024
 # 仅在无缩放工具（PIL/sips 均不可用）时内联原图的上限
 MAX_INLINE_BYTES = 150 * 1024
 IMAGE_WORKERS = 8
+
+# 缩略图尺寸与质量：160px/q70 与 220px/q82 肉眼几乎无差，但 base64 体积约减一半
+THUMB_SIZE = 160
+THUMB_QUALITY = 70
+
+# 缩略图磁盘缓存：命中即跳过下载与缩放，二次生成同一页面从数十秒降到秒级
+CACHE_ENV = "WUHAN_GUIDE_CACHE"
+CACHE_MAX_BYTES = 300 * 1024 * 1024
+CACHE_PRUNE_AT = 5000          # 缓存条目超过该数量时尝试按体积清理
+
+
+def cache_root() -> str:
+    """缓存根目录：优先 WUHAN_GUIDE_CACHE，其次 XDG_CACHE_HOME，最后 ~/.cache。"""
+    explicit = os.environ.get(CACHE_ENV)
+    if explicit:
+        return os.path.expanduser(explicit)
+    base = os.environ.get("XDG_CACHE_HOME") or os.path.join(os.path.expanduser("~"), ".cache")
+    return os.path.join(base, "wuhan-guide")
+
+
+def thumb_cache_dir() -> str:
+    return os.path.join(cache_root(), "thumbs")
+
+
+def thumb_cache_key(url: str) -> str:
+    """缓存键随尺寸/质量/格式变化，改参数后旧图自动失效。"""
+    raw = f"{url}|{THUMB_SIZE}|{THUMB_QUALITY}|jpeg|v1"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _cache_path(key: str) -> str:
+    return os.path.join(thumb_cache_dir(), key[:2], key + ".txt")
+
+
+def cache_get(key: str):
+    try:
+        with open(_cache_path(key), "r", encoding="ascii") as f:
+            data = f.read()
+    except OSError:
+        return None
+    return data if data.startswith("data:image/") else None
+
+
+def cache_put(key: str, data_uri: str) -> None:
+    path = _cache_path(key)
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="ascii") as f:
+            f.write(data_uri)
+        os.replace(tmp, path)
+    except OSError as exc:  # 缓存失败不影响主流程
+        print(f"缓存写入失败（{type(exc).__name__}: {exc}）：{path}", file=sys.stderr)
+
+
+# 失败标记：源站 403/超时的 URL 每次都重试会白等十几秒，标记后 TTL 内直接跳过
+CACHE_FAIL_MARK = "!fail"
+CACHE_FAIL_TTL = 7 * 24 * 3600
+
+
+def cache_mark_failed(key: str) -> None:
+    cache_put(key, CACHE_FAIL_MARK)
+
+
+def cache_failed_recently(key: str) -> bool:
+    path = _cache_path(key)
+    try:
+        if os.path.getmtime(path) + CACHE_FAIL_TTL < time.time():
+            return False
+        with open(path, "r", encoding="ascii") as f:
+            return f.read() == CACHE_FAIL_MARK
+    except OSError:
+        return False
+
+
+def prune_cache(max_bytes: int = CACHE_MAX_BYTES) -> None:
+    """缓存超过上限时按访问时间删旧，避免无限膨胀；扫描失败直接放弃。"""
+    root = thumb_cache_dir()
+    try:
+        files = []
+        total = 0
+        for dirpath, _dirnames, filenames in os.walk(root):
+            for name in filenames:
+                if not name.endswith(".txt"):
+                    continue
+                full = os.path.join(dirpath, name)
+                try:
+                    stat = os.stat(full)
+                except OSError:
+                    continue
+                files.append((stat.st_atime, stat.st_size, full))
+                total += stat.st_size
+        if total <= max_bytes:
+            return
+        files.sort()
+        for _atime, size, full in files:
+            if total <= max_bytes * 0.8:
+                break
+            try:
+                os.remove(full)
+                total -= size
+            except OSError:
+                continue
+    except OSError:
+        return
 
 
 def _download(url: str, path: str) -> bool:
@@ -530,7 +725,7 @@ def _sniff_mime(path: str) -> str:
 
 
 def make_thumb(url: str, tmpdir: str, tag: str = "0"):
-    """下载图片并缩放到 220px，返回 data URI；失败返回 None。
+    """下载图片并缩放到 THUMB_SIZE，返回 data URI；失败返回 None。
 
     缩放优先 PIL，其次 macOS sips；两者都不可用时，仅当原图小于
     MAX_INLINE_BYTES 才内联原图，避免无缩放工具时产出超大 HTML。
@@ -545,9 +740,9 @@ def make_thumb(url: str, tmpdir: str, tag: str = "0"):
         from PIL import Image
 
         im = Image.open(raw)
-        im.thumbnail((220, 220))
+        im.thumbnail((THUMB_SIZE, THUMB_SIZE))
         out = os.path.join(tmpdir, f"t_{tag}.jpg")
-        im.convert("RGB").save(out, "JPEG", quality=82)
+        im.convert("RGB").save(out, "JPEG", quality=THUMB_QUALITY)
         with open(out, "rb") as f:
             return "data:image/jpeg;base64," + base64.b64encode(f.read()).decode()
     except ImportError:
@@ -559,7 +754,9 @@ def make_thumb(url: str, tmpdir: str, tag: str = "0"):
     if (
         shutil.which("sips")
         and subprocess.run(
-            ["sips", "-Z", "220", raw, "--out", out], capture_output=True
+            ["sips", "-Z", str(THUMB_SIZE), "-s", "format", "jpeg",
+             "-s", "formatOptions", str(THUMB_QUALITY), raw, "--out", out],
+            capture_output=True,
         ).returncode == 0
         and os.path.exists(out)
     ):
@@ -578,37 +775,67 @@ def make_thumb(url: str, tmpdir: str, tag: str = "0"):
         return f"data:{_sniff_mime(raw)};base64," + base64.b64encode(f.read()).decode()
 
 
-def build_thumbs(urls: list, tmpdir: str, workers: int = IMAGE_WORKERS) -> dict:
+def build_thumbs(urls: list, tmpdir: str, workers: int = IMAGE_WORKERS,
+                 no_cache: bool = False) -> dict:
     """并发下载并缩放，返回 {url: data_uri}；失败的 URL 不出现在结果中。
 
-    实测串行预取全量约 200 张图需 160s+，并发后降到 20s 量级。
+    先查磁盘缓存（键含 URL/尺寸/质量），命中则完全跳过下载与缩放：
+    首次生成全量约 200 张图 40s 量级，二次运行可降到秒级。
     """
     uniq = list(dict.fromkeys(urls))
     if not uniq:
         return {}
     thumbs = {}
-    print(
-        f"正在预取 {len(uniq)} 张图片（并发 {min(workers, len(uniq))}）…",
-        file=sys.stderr,
-    )
-    with ThreadPoolExecutor(max_workers=min(workers, len(uniq))) as pool:
-        futures = {
-            pool.submit(make_thumb, u, tmpdir, str(i)): u for i, u in enumerate(uniq)
-        }
-        for fut in as_completed(futures):
-            url = futures[fut]
-            try:
-                data = fut.result()
-            except Exception as e:
-                print(
-                    f"图片处理异常（{type(e).__name__}: {e}）：{url[:60]}…",
-                    file=sys.stderr,
-                )
+    pending = []
+    skipped_failed = 0
+    for url in uniq:
+        if not no_cache:
+            key = thumb_cache_key(url)
+            cached = cache_get(key)
+            if cached:
+                thumbs[url] = cached
                 continue
-            if data:
-                thumbs[url] = data
+            if cache_failed_recently(key):
+                skipped_failed += 1
+                continue
+        pending.append(url)
+    hits = len(thumbs)
+    if pending:
+        print(
+            f"正在预取 {len(pending)} 张图片（并发 {min(workers, len(pending))}，"
+            f"缓存命中 {hits}/{len(uniq)}，跳过已知失败 {skipped_failed}）…",
+            file=sys.stderr,
+        )
+        written = 0
+        with ThreadPoolExecutor(max_workers=min(workers, len(pending))) as pool:
+            futures = {
+                pool.submit(make_thumb, u, tmpdir, str(i)): u
+                for i, u in enumerate(pending)
+            }
+            for fut in as_completed(futures):
+                url = futures[fut]
+                try:
+                    data = fut.result()
+                except Exception as e:
+                    print(
+                        f"图片处理异常（{type(e).__name__}: {e}）：{url[:60]}…",
+                        file=sys.stderr,
+                    )
+                    continue
+                key = thumb_cache_key(url)
+                if data:
+                    thumbs[url] = data
+                    if not no_cache:
+                        cache_put(key, data)
+                        written += 1
+                elif not no_cache:
+                    cache_mark_failed(key)
+                    written += 1
+        if written >= CACHE_PRUNE_AT:
+            prune_cache()
     print(
-        f"图片预取完成：成功 {len(thumbs)} / 失败 {len(uniq) - len(thumbs)}",
+        f"图片预取完成：命中缓存 {hits}，新下载 {len(thumbs) - hits}，"
+        f"失败/跳过 {len(uniq) - len(thumbs)}（其中已知失败 {skipped_failed}）",
         file=sys.stderr,
     )
     return thumbs
@@ -764,7 +991,8 @@ GUIDE_CARDS_CSS = """
 """
 
 
-def render_card_fragment(codes, records, heading, sort=True, show_images=True) -> tuple:
+def render_card_fragment(codes, records, heading, sort=True, show_images=True,
+                         no_cache=False) -> tuple:
     """生成 (作用域化 CSS, 行程卡 HTML 片段)，交给 guide_common.render_page 注入单页。
 
     本函数不写任何文件、不打印预览提示；文字行程单由调用方另行调用 render() 输出。
@@ -787,7 +1015,7 @@ def render_card_fragment(codes, records, heading, sort=True, show_images=True) -
                     for u in (r["img1"], r["img2"], r["img3"]):
                         if u and u not in need:
                             need.append(u)
-        thumbs = build_thumbs(need, tmpdir) if need else {}
+        thumbs = build_thumbs(need, tmpdir, no_cache=no_cache) if need else {}
 
         for code in codes:
             group = groups[code]
@@ -969,7 +1197,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--replace",
         action="append",
         metavar="旧=新",
-        help="在所选线路内用数据中已存在的景点替换旧景点；可重复，如 --replace 东湖=汉街",
+        help="在所选线路内用数据中已存在的景点替换旧景点；旧景点按精确名匹配"
+        "（子串命中多个景点会报错），同名景点在所选线路内全部替换；"
+        "可重复，如 --replace 东湖=汉街",
     )
     parser.add_argument(
         "--half",
@@ -1009,6 +1239,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-image",
         action="store_true",
         help="不输出景点图片链接",
+    )
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="不读写缩略图磁盘缓存（默认缓存在 ~/.cache/wuhan-guide/thumbs，"
+        "可用 WUHAN_GUIDE_CACHE 改根目录）",
     )
     parser.add_argument(
         "--cards",
@@ -1070,8 +1306,15 @@ def main() -> None:
 
     notices = []
 
-    # 1) 替换（在所选记录内用全量数据中已存在的景点替换旧景点）
-    records, msgs = apply_replacements(records, all_records, args.replace)
+    # 0) 先把记录收缩到本次行程线路：页面/行程单只渲染 target_codes 内的景点，
+    #    不收缩的话替换与排除会作用在看不见的记录上，提示与实际输出不一致
+    scope = set(target_codes)
+    records = [r for r in records if r["code"] in scope]
+
+    # 1) 替换（在所选线路内用全量数据中已存在的景点替换旧景点）
+    records, msgs = apply_replacements(
+        records, all_records, args.replace, target_codes
+    )
     notices += msgs
 
     # 2) 排除线路/景点
@@ -1131,6 +1374,7 @@ def main() -> None:
     css, fragment = render_card_fragment(
         target_codes, records, heading,
         sort=not args.no_sort, show_images=not args.no_image,
+        no_cache=args.no_cache,
     )
 
     # 文字行程单始终打到 stdout；单页在同一次调用中生成，禁止重复拉接口

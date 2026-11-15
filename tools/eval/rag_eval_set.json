@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "note": "saig-spu-rag 检索回归评测集。expect 为期望命中的 (source, section)；source 与 section 均按子串匹配，容忍分块标题的细微差异。expect 为空表示材料未覆盖的越界问句，返回任何结果都算误报。",
+  "cases": [
+    {
+      "query": "磨山景区怎么玩",
+      "expect": [{"source": "2026武汉旅游产品手册md.md", "section": "磨山景区"}]
+    },
+    {
+      "query": "东湖樱花园什么时候开花",
+      "expect": [{"source": "2026武汉旅游产品手册md.md", "section": "东湖樱舞"}]
+    },
+    {
+      "query": "热干面是什么",
+      "expect": [{"source": "2026武汉旅游产品手册md.md", "section": "热干面"}]
+    },
+    {
+      "query": "湖北省博物馆有哪些镇馆之宝",
+      "expect": [{"source": "2026武汉旅游产品手册md.md", "section": "湖北省博物馆"}]
+    },
+    {
+      "query": "辛亥革命博物院开放时间",
+      "expect": [{"source": "2026武汉旅游产品手册md.md", "section": "辛亥革命博物院"}]
+    },
+    {
+      "query": "两江游船在哪里坐",
+      "expect": [{"source": "2026武汉旅游产品手册md.md", "section": "两江游船"}]
+    },
+    {
+      "query": "知音号演出怎么样",
+      "expect": [{"source": "2026武汉旅游产品手册md.md", "section": "知音号"}]
+    },
+    {
+      "query": "武汉长江大桥什么时候建成",
+      "expect": [{"source": "2026武汉旅游产品手册md.md", "section": "武汉长江大桥"}]
+    },
+    {
+      "query": "木兰草原在哪里",
+      "expect": [{"source": "2026武汉旅游产品手册md.md", "section": "木兰草原"}]
+    },
+    {
+      "query": "东湖绿道有多长",
+      "expect": [{"source": "2026武汉旅游产品手册md.md", "section": "东湖绿道"}]
+    },
+    {
+      "query": "武汉大学樱花怎么预约",
+      "expect": [{"source": "2026武汉旅游产品手册md.md", "section": "珞樱缤纷"}]
+    },
+    {
+      "query": "户部巷有什么好吃的",
+      "expect": [{"source": "2026武汉旅游产品手册md.md", "section": "户部巷美食街"}]
+    },
+    {
+      "query": "武汉有多少人口",
+      "expect": [{"source": "武汉概览.md", "section": "人口分布"}]
+    },
+    {
+      "query": "武汉的地理位置",
+      "expect": [{"source": "武汉概览.md", "section": "地理位置"}]
+    },
+    {
+      "query": "武汉有哪些风景名胜",
+      "expect": [{"source": "武汉概览.md", "section": "风景名胜"}]
+    },
+    {
+      "query": "武汉气候怎么样",
+      "expect": [{"source": "武汉概览.md", "section": "气象"}]
+    },
+    {
+      "query": "武汉历史沿革",
+      "expect": [{"source": "武汉概览.md", "section": "历史沿革"}]
+    },
+    {
+      "query": "武汉交通运输情况",
+      "expect": [{"source": "武汉概览.md", "section": "交通运输"}]
+    },
+    {
+      "query": "武汉工业发展情况",
+      "expect": [{"source": "武汉概览.md", "section": "工业和建筑业"}]
+    },
+    {
+      "query": "什么是SPU",
+      "expect": [{"source": "数命SPU说明.md", "section": "数命SPU说明"}]
+    },
+    {
+      "query": "SPU五项核心能力是什么",
+      "expect": [{"source": "数命SPU说明.md", "section": "数命SPU说明"}]
+    },
+    {
+      "query": "数命SPU社区是什么",
+      "expect": [{"source": "数命SPU社区说明.md", "section": "数命SPU社区说明"}]
+    },
+    {
+      "query": "FDE和OPC是什么",
+      "expect": [{"source": "数命SPU社区说明.md", "section": "数命SPU社区说明"}]
+    },
+    {
+      "query": "SAIG大赛怎么报名",
+      "expect": [{"source": "SAIG数命SPU国际AI大赛说明.md", "section": "第一阶段"}]
+    },
+    {
+      "query": "SAIG大赛时间安排",
+      "expect": [{"source": "SAIG数命SPU国际AI大赛说明.md", "section": "赛事时间安排"}]
+    },
+    {
+      "query": "SAIG大赛线下赛什么时候",
+      "expect": [{"source": "SAIG数命SPU国际AI大赛说明.md", "section": "第二阶段"}]
+    },
+    {
+      "query": "推荐一部好看的科幻电影",
+      "expect": []
+    },
+    {
+      "query": "帮我订一张去北京的高铁票",
+      "expect": []
+    },
+    {
+      "query": "股票怎么开户",
+      "expect": []
+    },
+    {
+      "query": "怎么写一个Python爬虫",
+      "expect": []
+    }
+  ]
+}

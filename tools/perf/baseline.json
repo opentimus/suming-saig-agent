@@ -1,0 +1,82 @@
+{
+ "generated_at": "2026-11-15T21:54:39",
+ "python": "3.9.6",
+ "assets": {
+  "map_jpg_bytes": 870417,
+  "map_template_bytes": 184618,
+  "dist_zip_bytes": 1842354
+ },
+ "docs": {
+  "agents/jing-xiao-wu.md": {
+   "bytes": 14028,
+   "chars": 6346,
+   "tokens_est": 3966
+  },
+  "skills/wuhan-guide/SKILL.md": {
+   "bytes": 26840,
+   "chars": 13821,
+   "tokens_est": 8638
+  },
+  "skills/saig-spu-rag/SKILL.md": {
+   "bytes": 5963,
+   "chars": 2765,
+   "tokens_est": 1728
+  },
+  "README.md": {
+   "bytes": 5896,
+   "chars": 3300,
+   "tokens_est": 2062
+  }
+ },
+ "map": {
+  "seconds_median": 0.284,
+  "seconds_all": [
+   0.284,
+   0.319,
+   0.266
+  ],
+  "html_bytes": 184332,
+  "jpg_bytes": 870417
+ },
+ "rag": {
+  "cli_seconds_median": 0.4573,
+  "cli_seconds_all": [
+   0.44,
+   0.465,
+   0.457
+  ],
+  "load_seconds_median": 0.3658,
+  "search_seconds_median": 0.0059,
+  "index_bytes": 1309596,
+  "chunks_bytes": 379877
+ },
+ "images": {
+  "urls": 198,
+  "rounds": [
+   {
+    "seconds": 41.107,
+    "ok": 195,
+    "payload_bytes": 2933361
+   },
+   {
+    "seconds": 45.509,
+    "ok": 195,
+    "payload_bytes": 2933357
+   }
+  ],
+  "seconds_median": 43.308,
+  "ok": 195,
+  "payload_bytes": 2933357,
+  "cache": "off"
+ },
+ "route": {
+  "seconds": 25.582,
+  "html_bytes": 1053375,
+  "jpg_bytes": 870417,
+  "stderr_tail": [
+   "",
+   "---",
+   "拉取 66 条 / total=66"
+  ]
+ }
+}
