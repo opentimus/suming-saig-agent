@@ -551,6 +551,21 @@ GUIDE_CARDS_CSS = """
   background-image:linear-gradient(140deg,rgba(255,255,255,.32),rgba(255,255,255,0) 56%,rgba(0,0,0,.12));
   box-shadow:0 2px 6px rgba(20,45,60,.3);
 }
+/* 每行左侧拖动把手：拖动切换组内顺序，支持触屏与方向键 */
+.gd-cards .gc-drag{
+  flex:none;width:16px;height:23px;padding:0;border:0;border-radius:5px;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:none;color:#9aabb4;cursor:grab;opacity:.55;
+  touch-action:none;transition:opacity .2s,color .2s,background .2s;
+}
+.gd-cards .gc-drag:hover,.gd-cards .gc-drag:focus-visible{opacity:1;color:#2b7fb8;background:rgba(85,182,232,.12)}
+.gd-cards .gc-drag:focus-visible{outline:2px solid #df8e2e;outline-offset:1px}
+.gd-cards .gc-drag svg{width:10px;height:16px;fill:currentColor;display:block;pointer-events:none}
+.gd-cards .gc-card.is-dragging{
+  background:linear-gradient(90deg,rgba(85,182,232,.14),rgba(230,154,50,.1));
+  border-radius:10px;box-shadow:0 10px 22px rgba(31,74,99,.16);
+}
+.gd-cards .gc-card.is-dragging .gc-drag{cursor:grabbing;opacity:1;color:#2b7fb8}
 .gd-cards .gc-card-h h3{margin:0;font-size:13.5px;font-weight:800;color:#19364c}
 /* 每行最右侧的删除图标 */
 .gd-cards .gc-del{
@@ -694,8 +709,16 @@ def render_card_fragment(codes, records, heading, sort=True, show_images=True) -
                     if x
                 )
                 review = ('<p class="gc-review">' + html.escape(r["review"]) + '</p>') if r["review"] else ""
+                drag = ('<button class="gc-drag" type="button" title="拖动排序（↑↓ 也可调整）" '
+                        'aria-label="拖动排序：' + html.escape(r["spot"]) + '">'
+                        '<svg viewBox="0 0 10 16" aria-hidden="true">'
+                        '<circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/>'
+                        '<circle cx="3" cy="8" r="1.2"/><circle cx="7" cy="8" r="1.2"/>'
+                        '<circle cx="3" cy="13" r="1.2"/><circle cx="7" cy="13" r="1.2"/>'
+                        '</svg></button>')
                 cards.append(
-                    '<article class="gc-card"><div class="gc-card-h"><span class="gc-num">' + str(n) +
+                    '<article class="gc-card"><div class="gc-card-h">' + drag +
+                    '<span class="gc-num">' + str(n) +
                     '</span><h3>' + html.escape(r["spot"]) + '</h3></div><div class="gc-meta">' +
                     meta + '</div>' + review + imgs + '</article>'
                 )

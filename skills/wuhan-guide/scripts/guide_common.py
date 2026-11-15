@@ -16,6 +16,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import sys
 from html import escape
 from pathlib import Path
@@ -25,15 +26,22 @@ ASSET = ASSETS / "wuhan-guide-map.html"
 SPOTS_FILE = ASSETS / "spots.json"
 DEFAULT_NAME = "wuhan-guide.html"
 
-# 六个自解释占位符：模板中各恰好出现一次
+# 注入契约分两类：
+# 1) 单点令牌：CSS 与模式，模板里各出现一次；
+# 2) 带默认内容的块：块内预置默认 18 景点 / 线路按钮 / 内联数据 / 导览占位，
+#    模板直接打开也能完整预览，生成时整块替换（含起止标记），产物不保留标记。
 TOKEN_CSS = "__GUIDE_CARDS_CSS__"
-TOKEN_HTML = "__GUIDE_CARDS_HTML__"
 TOKEN_MODE = "__GUIDE_MODE__"
-TOKEN_SPOTS = "__GUIDE_SPOTS_HTML__"
-TOKEN_ROUTE_BTNS = "__GUIDE_ROUTE_BTNS__"
-TOKEN_SPOTS_JSON = "__GUIDE_SPOTS_JSON__"
-TOKENS = (TOKEN_CSS, TOKEN_HTML, TOKEN_MODE,
-          TOKEN_SPOTS, TOKEN_ROUTE_BTNS, TOKEN_SPOTS_JSON)
+SINGLE_TOKENS = (TOKEN_CSS, TOKEN_MODE)
+
+# 块标记本身是完整 HTML 注释，替换时连注释一起移除，避免残留 <!-- 把生成内容注释掉
+BLOCK_CARDS = ("<!-- __GUIDE_CARDS_HTML__ -->", "<!-- __GUIDE_CARDS_HTML_END__ -->")
+BLOCK_SPOTS = ("<!-- __GUIDE_SPOTS_HTML__ -->", "<!-- __GUIDE_SPOTS_HTML_END__ -->")
+BLOCK_ROUTE_BTNS = ("<!-- __GUIDE_ROUTE_BTNS__ -->", "<!-- __GUIDE_ROUTE_BTNS_END__ -->")
+BLOCK_SPOTS_JSON = ("<!-- __GUIDE_SPOTS_JSON__ -->", "<!-- __GUIDE_SPOTS_JSON_END__ -->")
+BLOCKS = (BLOCK_CARDS, BLOCK_SPOTS, BLOCK_ROUTE_BTNS, BLOCK_SPOTS_JSON)
+
+ALL_MARKERS = SINGLE_TOKENS + tuple(marker for block in BLOCKS for marker in block)
 MODES = ("map", "route")
 
 # 线路代号与名称：代号固定 G1–G9，名称用于按钮 title / aria-label
@@ -224,16 +232,30 @@ def page_digest(path: Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:16]
 
 
+def _replace_block(html: str, block: tuple, content: str) -> str:
+    """用 content 替换 start…end 之间的整块默认内容（含起止标记）。"""
+    start, end = block
+    pattern = re.compile(re.escape(start) + r".*?" + re.escape(end), re.DOTALL)
+    if len(pattern.findall(html)) != 1:
+        raise ValueError(f"模板块 {start} … {end} 必须恰好出现 1 次")
+    return pattern.sub(lambda _match: content, html, count=1)
+
+
 def load_template() -> str:
-    """精确读取模板（保留行尾与 2MB 级 base64 长行），并确认六个占位符各恰好一次。"""
+    """精确读取模板（保留行尾与 2MB 级 base64 长行），并校验令牌/块标记各恰好一次。"""
     if not ASSET.is_file():
         raise FileNotFoundError(f"内置页面模板缺失：{ASSET}")
     with open(ASSET, "r", encoding="utf-8", newline="") as f:
         html = f.read()
-    for tok in TOKENS:
+    for tok in SINGLE_TOKENS:
         n = html.count(tok)
         if n != 1:
-            raise ValueError(f"模板占位符 {tok} 应恰好出现 1 次，实际 {n} 次")
+            raise ValueError(f"模板令牌 {tok} 应恰好出现 1 次，实际 {n} 次")
+    for block in BLOCKS:
+        for marker in block:
+            n = html.count(marker)
+            if n != 1:
+                raise ValueError(f"模板块标记 {marker} 应恰好出现 1 次，实际 {n} 次")
     return html
 
 
@@ -243,29 +265,36 @@ def render_page(*, cards_css: str, cards_html: str, mode: str,
     """把景点、线路按钮、页内数据、卡片 CSS / HTML / 模式注入模板并原子写出。
 
     template / spots 可由入口传入已校验过的结果，避免重复读取大文件。
+    块内默认内容只服务于“模板直接打开”，生成时整体替换。
     """
     if mode not in MODES:
         raise ValueError(f"未知页面模式：{mode}，应为 {' / '.join(MODES)}")
     html = template if template is not None else load_template()
     spot_list = spots if spots is not None else load_spots()
 
-    injected = {
-        TOKEN_CSS: cards_css,
-        TOKEN_HTML: cards_html,
-        TOKEN_MODE: mode,
-        TOKEN_SPOTS: render_spots_html(spot_list),
-        TOKEN_ROUTE_BTNS: render_route_btns(spot_list),
-        TOKEN_SPOTS_JSON: render_spots_json(spot_list),
-    }
-    # 注入内容不得自带占位符，避免二次替换串味
-    for tok, value in injected.items():
-        if tok in value:
-            raise ValueError(f"注入内容含模板占位符：{tok}")
-    for tok, value in injected.items():
-        html = html.replace(tok, value)
-    for tok in TOKENS:
-        if tok in html:
-            raise ValueError(f"占位符未完全替换：{tok}")
+    spots_html = render_spots_html(spot_list)
+    route_btns = render_route_btns(spot_list)
+    spots_json = (
+        '<script type="application/json" id="guideSpotsData">'
+        + render_spots_json(spot_list)
+        + '</script>'
+    )
+    injected = (cards_css, cards_html, mode, spots_html, route_btns, spots_json)
+    # 注入内容不得自带标记，避免二次替换串味
+    for value in injected:
+        for marker in ALL_MARKERS:
+            if marker in value:
+                raise ValueError(f"注入内容含模板标记：{marker}")
+
+    html = _replace_block(html, BLOCK_CARDS, cards_html)
+    html = _replace_block(html, BLOCK_SPOTS, spots_html)
+    html = _replace_block(html, BLOCK_ROUTE_BTNS, route_btns)
+    html = _replace_block(html, BLOCK_SPOTS_JSON, spots_json)
+    html = html.replace(TOKEN_CSS, cards_css)
+    html = html.replace(TOKEN_MODE, mode)
+    for marker in ALL_MARKERS:
+        if marker in html:
+            raise ValueError(f"模板标记未完全替换：{marker}")
 
     path = Path(os.path.abspath(os.path.expanduser(str(out))))
     try:
