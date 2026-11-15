@@ -87,10 +87,18 @@ python3 tools/sync_template_defaults.py --check   # 校验模板默认块是否�
 
 ## 打包分享
 
+WorkBuddy 的专家包就是插件目录本身的 zip：**zip 根目录下直接是 `.codebuddy-plugin/`**，
+不要多套一层文件夹，也不要带 `.DS_Store`、`__MACOSX`。用脚本打包可自动完成这些约定：
+
 ```bash
-# 在仓库父目录执行，产物含 .codebuddy-plugin/plugin.json
-zip -r jing-xiao-wu.zip jing-xiao-wu/ -x "jing-xiao-wu/.git/*" -x "jing-xiao-wu/.DS_Store"
+python3 tools/pack_expert.py            # → dist/jing-xiao-wu-<version>.zip
+python3 tools/pack_expert.py --list     # 只列出将被打包的文件
+python3 tools/pack_expert.py --out /tmp/x.zip
 ```
+
+脚本会先校验 `plugin.json` 的 `name` 与 `agentName` 一致、`agents`/`skills`/`avatar`
+指向的文件真实存在，再跑三项数据一致性校验（Dify 副本、线路文档、模板默认块），
+任一漂移即中止，避免把过期数据发出去。产出的 zip 可直接在 WorkBuddy 里上传安装。
 
 ## 开源协议
 

@@ -8,5 +8,6 @@ __pycache__/
 # 生成产物：由 skills/wuhan-guide/scripts/show_map.py / query_route.py 输出
 /wuhan-guide.html
 
-# 打包分享产物（见 README「打包分享」）
+# 打包分享产物（见 README「打包分享」，由 tools/pack_expert.py 生成）
 *.zip
+/dist/
