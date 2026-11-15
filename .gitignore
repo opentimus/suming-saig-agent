@@ -4,4 +4,9 @@ __pycache__/
 .venv/
 .env
 .vscode/
+
+# 生成产物：由 skills/wuhan-guide/scripts/show_map.py / query_route.py 输出
 /wuhan-guide.html
+
+# 打包分享产物（见 README「打包分享」）
+*.zip

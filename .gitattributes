@@ -1,0 +1,18 @@
+# 全仓统一 LF：模板含 2MB 级单行 base64，CRLF 归一化会破坏渲染。
+* text=auto eol=lf
+
+# 模板必须逐字节保持原样：禁止 git 做任何换行转换与文本化处理。
+skills/wuhan-guide/assets/wuhan-guide-map.html -text
+skills/wuhan-guide/assets/spots.json text eol=lf
+
+# 快照由 tools/gen_route_docs.py --snapshot 生成，保持可读 diff
+tools/route_snapshot.json text eol=lf
+
+# 二进制资源
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.zip binary
+
+# 生成产物不入库（与 .gitignore 呼应，避免误提交后触发 diff 噪音）
+wuhan-guide.html -diff

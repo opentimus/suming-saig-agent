@@ -242,11 +242,20 @@ def _replace_block(html: str, block: tuple, content: str) -> str:
 
 
 def load_template() -> str:
-    """精确读取模板（保留行尾与 2MB 级 base64 长行），并校验令牌/块标记各恰好一次。"""
+    """精确读取模板（保留行尾与 2MB 级 base64 长行），并校验令牌/块标记各恰好一次。
+
+    ⚠ 模板是靠「字符串级精确替换」维护的，任何行尾归一化、格式化或整文件重排都会
+    破坏内联 base64 行。禁止用编辑器格式化该文件；仓库级保护见根目录 `.gitattributes`。
+    """
     if not ASSET.is_file():
         raise FileNotFoundError(f"内置页面模板缺失：{ASSET}")
     with open(ASSET, "r", encoding="utf-8", newline="") as f:
         html = f.read()
+    if "\r\n" in html:
+        raise ValueError(
+            f"模板 {ASSET.name} 含 CRLF 行尾，可能是编辑器或 git 自动转换造成的，"
+            "会破坏内联 base64 行；请恢复为纯 LF 后重试"
+        )
     for tok in SINGLE_TOKENS:
         n = html.count(tok)
         if n != 1:

@@ -25,7 +25,7 @@
 
 ```bash
 curl -X POST 'https://dify.aoaerp.com/v1/chat-messages' \
-  --header 'Authorization: Bearer app-D2u0KJJJzTQBZ7DhuEBU5oNC' \
+  --header "Authorization: Bearer $WUHAN_SCENIC_DIFY_API_KEY" \
   --header 'Content-Type: application/json' \
   --data-raw '{
     "inputs": {"type":"point"},
@@ -59,7 +59,9 @@ curl -X POST 'https://dify.aoaerp.com/v1/chat-messages' \
 
 | 变量 | 默认值 | 用途 |
 | --- | --- | --- |
-| `WUHAN_SCENIC_DIFY_API_KEY` | `app-D2u0KJJJzTQBZ7DhuEBU5oNC` | 覆盖 API Key |
+| `WUHAN_SCENIC_DIFY_API_KEY` | 见 `scripts/dify_client.py` 的 `DEFAULT_API_KEY` | 覆盖 API Key（生产部署建议只从环境变量注入） |
 | `WUHAN_SCENIC_DIFY_BASE_URL` | `https://dify.aoaerp.com` | 覆盖服务地址 |
 | `WUHAN_SCENIC_DIFY_USER` | `wuhan-scenic-skill-user` | 覆盖用户标识 |
 | `WUHAN_SCENIC_DIFY_CONVERSATION_ID` | 空 | 延续既有会话 |
+
+> 实现位置：`scripts/dify_client.py` 是 4 个 Dify 技能共用的唯一客户端实现，`query_scenic.py` 只保留本技能的入参与环境变量前缀。改接口逻辑请改 `tools/dify_client.py`，再运行 `python3 tools/sync_dify_client.py --write` 同步副本。

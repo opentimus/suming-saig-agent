@@ -38,12 +38,12 @@ allowed-tools: Bash(python3)
 
 ## 工作流程
 
-档位协议以 `agents/jing-xiaowu.md` 的「回答档位」为准。本技能在 L0 快答默认调用知识库 **1 次**；L1+ 每次仅针对用户选定的方向追加 **1 次**。
+档位协议以 `agents/jing-xiao-wu.md` 的「回答档位」为准。本技能在 L0 快答默认调用知识库 **1 次**；L1+ 每次仅针对用户选定的方向追加 **1 次**。
 
 1. 将用户原问题直接改写为一个明确的 `query`（中文，保留关键实体与限定词，如「定义」「能力」「模式」「社区」等）。不拆分 query、不按主题补问、不串联其他技能；介绍类需求（如「介绍一下数命SPU」）同样只调用 1 次。
 2. 执行脚本获取答案：
    ```bash
-   python3 ~/.codebuddy/skills/shuming-spu-intro/scripts/query_spu.py "数命SPU的定义是什么"
+   python3 scripts/query_spu.py "数命SPU的定义是什么"
    ```
    脚本位置相对于本 SKILL.md 为 `scripts/query_spu.py`。接口固定入参 `inputs = {"type": "spu"}`、`response_mode = "blocking"`，除 `query` 外不修改其他字段。
 3. 基于返回的 `answer` 组织 L0 快答：一句话结论 + 不超过 5 条要点，只摘取本次 stdout 原文、不改写事实；忠实引用概念与表述，标注来源为「数命SPU知识库」；接口未覆盖的内容明确说明，不要自行补充未经核实的信息。

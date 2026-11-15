@@ -42,9 +42,9 @@ curl -X POST 'https://admin.aoaerp.com/api/lowcode/normal/dify/app/table/record/
 
 | 传入条件 | 期望结果 | 实际结果 |
 | --- | --- | --- |
-| `线路代号 lt G1` | 空 | `total=68`（全量） |
-| `路线代号 lt G1` | 空 | `total=68`（全量） |
-| `路线代号 eq G1` | 仅 G1 的记录 | `total=68`（全量） |
+| `线路代号 lt G1` | 空 | 全量返回（`total` 等于表内全部记录数） |
+| `路线代号 lt G1` | 空 | 全量返回 |
+| `路线代号 eq G1` | 仅 G1 的记录 | 全量返回 |
 
 因此本 Skill **一律拉取全量，在脚本内按 `路线代号` 过滤**，不在接口层做条件查询。若将来接口支持了服务端过滤，仍需保留客户端过滤以保证行为稳定。
 
@@ -86,7 +86,7 @@ curl -X POST 'https://admin.aoaerp.com/api/lowcode/normal/dify/app/table/record/
 
 > **图片字段注意**：元素比文本字段多一个 `link` 键，`scripts/query_route.py` 的 `field_url()` 优先取 `link` 再回落 `text`，并只接受 `http(s)` 开头的取值。
 >
-> 实测：全表 68 条记录的「图片1/2/3」去重后仅 3 个 URL，且所有记录的三图组合**完全一致**（同一组占位图），并非按景点区分的真实配图。脚本会在 stderr 给出「图片字段提示：全部 N 条记录均为同一组占位图」的告警；解析真实数据前，可加 `--no-image` 关闭图片输出。当图片按景点补齐后，该告警会自动消失。
+> 实测：全表记录的「图片1/2/3」去重后仅少数几个 URL，且所有记录的三图组合**完全一致**（同一组占位图），并非按景点区分的真实配图。脚本会在 stderr 给出「图片字段提示：全部 N 条记录均为同一组占位图」的告警；解析真实数据前，可加 `--no-image` 关闭图片输出。当图片按景点补齐后，该告警会自动消失。
 
 `scripts/query_route.py` 的 `field_text()` 已同时兼容两种形态。
 
@@ -98,7 +98,7 @@ curl -X POST 'https://admin.aoaerp.com/api/lowcode/normal/dify/app/table/record/
   - 值相同时（异常数据）保持接口返回顺序，并在 stderr 列出「排序值重复 / 缺失」提示，便于排查脏数据。
   - 实测存在质量问题：G4 缺 5 号（不影响排序），G8 有两条记录的 `排序` 均为 `1`（宝通寺、粮道街）。
   - 需要旧行为时用 `--no-sort`。
-- 全表 `total=68`，`pageSize=100` 一页可取完，无需翻页。
+- 全表记录数不超过 `pageSize=100`，一页可取完，无需翻页；确切条数以接口实时返回的 `total` 为准（`tools/route_snapshot.json` 与两份线路文档由 `tools/gen_route_docs.py` 从同一接口生成）。
 
 ## 错误处理
 
@@ -116,7 +116,7 @@ curl -X POST 'https://admin.aoaerp.com/api/lowcode/normal/dify/app/table/record/
 
 | 变量 | 默认值 | 用途 |
 | --- | --- | --- |
-| `WUHAN_ROUTE_API_TOKEN` | 见 `scripts/query_route.py` 内置默认值 | 覆盖接口 Token |
+| `WUHAN_ROUTE_API_TOKEN` | 见 `scripts/query_route.py` 内置默认值 | 覆盖接口 Token（生产部署建议只从环境变量注入） |
 | `WUHAN_ROUTE_BASE_URL` | `https://admin.aoaerp.com` | 覆盖服务地址 |
 | `WUHAN_ROUTE_APP` | `SPU` | 覆盖应用名 |
 | `WUHAN_ROUTE_TABLE` | `旅遊线路` | 覆盖表名 |

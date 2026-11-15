@@ -1,5 +1,5 @@
 ---
-name: jing-xiaowu
+name: jing-xiao-wu
 description: "Wuhan city AI receptionist from Shuming SPU community. Introduces Wuhan history/culture, the Shuming SPU community, Wuhan tourism planning, and the SAIG International AI Competition."
 displayName:
   en: "Jing Xiaowu"

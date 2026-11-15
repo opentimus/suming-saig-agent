@@ -38,13 +38,13 @@ allowed-tools: Bash(python3)
 
 ## 工作流程
 
-档位协议以 `agents/jing-xiaowu.md` 的「回答档位」为准。本技能在 L0 快答默认调用知识库 **1 次**；L1+ 每次仅针对用户选定的方向追加 **1 次**。
+档位协议以 `agents/jing-xiao-wu.md` 的「回答档位」为准。本技能在 L0 快答默认调用知识库 **1 次**；L1+ 每次仅针对用户选定的方向追加 **1 次**。
 
 1. 将用户原问题直接改写为一个明确的 `query`（中文，保留关键实体与限定词，如「介绍」「时间安排」「成绩公布」「SPU的定义」等）。不拆分 query、不按主题补问、不串联其他技能；介绍类需求（如「介绍一下SAIG大赛」）同样只调用 1 次。
 2. 执行脚本获取答案：
 
    ```bash
-   python3 ~/.codebuddy/skills/saig-intro/scripts/query_saig.py "介绍一下SAIG 数命SPU国际AI大赛"
+   python3 scripts/query_saig.py "介绍一下SAIG 数命SPU国际AI大赛"
    ```
 
    脚本位置相对于本 SKILL.md 为 `scripts/query_saig.py`。接口固定入参 `inputs = {"type": "saig"}`、`response_mode = "blocking"`，除 `query` 外不修改其他字段。
