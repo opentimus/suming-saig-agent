@@ -48,7 +48,9 @@ def render(html: str, spots: list) -> str:
     html = _swap_block(html, gc.BLOCK_ROUTE_BTNS, gc.render_route_btns(spots))
     html = _swap_block(html, gc.BLOCK_SPOTS_JSON, spots_json)
     # 导览占位文案里的景点数同样来自 spots.json
-    return COUNT_PATTERN.sub(f"{len(spots)} 个可点击景点", html)
+    html = COUNT_PATTERN.sub(f"{len(spots)} 个可点击景点", html)
+    # 文案里的交互描述与模板保持同源（3D 倾斜已移除，避免说明与实现不一致）
+    return html.replace("G1–G9 多选高亮、鼠标 3D 倾斜与景点简介", "G1–G9 多选高亮与景点简介")
 
 
 def main() -> int:

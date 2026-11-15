@@ -854,6 +854,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="单页 HTML 输出路径（默认 ./wuhan-guide.html，与导览模式同名覆盖）；"
         "须为工作区内的绝对路径，写到 /tmp 等临时目录会被预览服务拒绝",
     )
+    parser.add_argument(
+        "--inline-image",
+        action="store_true",
+        help="把底图 base64 内联回单文件（默认外置为页面同目录的 wuhan-guide-map.jpg）",
+    )
     return parser
 
 
@@ -896,10 +901,12 @@ def main() -> None:
         args.out or os.path.join(os.getcwd(), gc.DEFAULT_NAME)
     )))
     try:
-        path = gc.render_page(cards_css=css, cards_html=fragment, mode="route", out=out)
+        path = gc.render_page(cards_css=css, cards_html=fragment, mode="route", out=out,
+                              inline_image=args.inline_image)
     except (OSError, ValueError) as exc:
         raise SystemExit(f"生成武汉导览单页失败：{exc}")
-    print(f"\n已生成武汉导览单页（含行程卡片）：{path}")
+    deliverable = "单文件" if args.inline_image else f"页面 + 同目录 {gc.MAP_IMAGE.name}"
+    print(f"\n已生成武汉导览单页（含行程卡片，{deliverable}）：{path}")
     print(gc.preview_hint(Path(path)), file=sys.stderr)
     sys.stdout.flush()
     print(f"\n---\n拉取 {len(rows)} 条 / total={total}", file=sys.stderr)

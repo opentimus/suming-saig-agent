@@ -26,7 +26,7 @@ def intro_html(count: int) -> str:
         '  <div class="gd-intro-mark" aria-hidden="true">汉</div>\n'
         '  <div class="gd-intro-copy">\n'
         '    <h3>这张地图负责「看全城」，行程交给下一句</h3>\n'
-        f'    <p>当前是全景导览视图：地图可拖动查看全图，{count} 个可点击景点、G1–G9 多选高亮、鼠标 3D 倾斜与景点简介。'
+        f'    <p>当前是全景导览视图：地图可拖动查看全图，{count} 个可点击景点、G1–G9 多选高亮与景点简介。'
         '想要结构化行程单，说出天数或线路代号，同一张页面会在这里铺开对应线路的行程卡片。</p>\n'
         '    <div class="gd-chips">\n'
         '      <span class="gd-chip">武汉玩一天怎么玩</span>\n'
@@ -46,6 +46,11 @@ def main() -> int:
         default=os.path.join(os.getcwd(), gc.DEFAULT_NAME),
         help="输出 HTML 的绝对路径（须位于工作区内，文件名保持 ASCII）",
     )
+    parser.add_argument(
+        "--inline-image",
+        action="store_true",
+        help="把底图 base64 内联回单文件（默认外置为同目录的 wuhan-guide-map.jpg）",
+    )
     args = parser.parse_args()
 
     try:
@@ -64,13 +69,15 @@ def main() -> int:
             out=Path(os.path.abspath(os.path.expanduser(args.out))),
             template=template,
             spots=spots,
+            inline_image=args.inline_image,
         )
     except (OSError, ValueError) as exc:
         return gc.fail(f"生成导览页失败：{exc}", code=3)
 
     out = Path(path)
     print(f"武汉导览交互地图：{out}")
-    print("（单文件离线可用：地图可拖动查看全图，含可点击景点、G1–G9 多选高亮、3D 倾斜与简介弹窗；"
+    deliverable = "单文件" if args.inline_image else f"两个文件（页面 + 同目录 {gc.MAP_IMAGE.name}）"
+    print(f"（交付形态：{deliverable}；地图可拖动查看全图，含可点击景点、G1–G9 多选高亮与简介弹窗；"
           "底部行程面板当前为引导占位，说出天数或线路代号即可在同一页面生成行程卡片；"
           "橙金编号与下方清单编号对应）")
     print()

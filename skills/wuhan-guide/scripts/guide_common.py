@@ -7,12 +7,16 @@
 读景点 JSON → 校验 → 读模板 → 精确替换六个占位符 → 原子写出同名页面。
 
 景点唯一事实源是 assets/spots.json：地图热区、线路按钮、页内可编辑数据块都由它生成，
-编号由数组顺序派生（1..N），不单独落库。模板约 2.4MB 且含单行 base64，
-全程用 newline="" 精确读写，绝不整文件重排或统一行尾。
+编号由数组顺序派生（1..N），不单独落库。模板约 180KB（底图已外置为
+assets/wuhan-guide-map.jpg），全程用 newline="" 精确读写，绝不整文件重排或统一行尾。
+
+底图有两种交付形态：默认外置（页面 + 同目录 jpg，浏览器可流式解码与磁盘缓存）；
+inline_image=True 时重新 base64 内联成单文件，方便转发，但首屏解码成本更高。
 """
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import os
@@ -25,6 +29,10 @@ ASSETS = Path(__file__).resolve().parents[1] / "assets"
 ASSET = ASSETS / "wuhan-guide-map.html"
 SPOTS_FILE = ASSETS / "spots.json"
 DEFAULT_NAME = "wuhan-guide.html"
+
+# 底图外置：模板里的相对文件名，产物页面与图片同目录
+MAP_IMAGE = ASSETS / "wuhan-guide-map.jpg"
+MAP_IMAGE_SRC_RE = re.compile(r'(<img class="map-art"[^>]*?\bsrc=")([^"]*)(")')
 
 # 注入契约分两类：
 # 1) 单点令牌：CSS 与模式，模板里各出现一次；
@@ -268,13 +276,45 @@ def load_template() -> str:
     return html
 
 
+def _apply_map_image(html: str, *, path: Path, inline_image: bool) -> tuple:
+    """把底图落成「外置同目录文件」或「内联 data URI」，返回 (html, 需写出的图片路径或 None)。
+
+    外置方案让浏览器流式解码、走磁盘缓存与渐进渲染；base64 内联只用于单文件转发场景。
+    """
+    if not MAP_IMAGE.is_file():
+        raise FileNotFoundError(f"底图文件缺失：{MAP_IMAGE}")
+    match = MAP_IMAGE_SRC_RE.search(html)
+    if not match:
+        raise ValueError('模板中未找到底图 <img class="map-art"> 的 src')
+
+    if inline_image:
+        data = base64.b64encode(MAP_IMAGE.read_bytes()).decode("ascii")
+        src = f"data:image/jpeg;base64,{data}"
+        return MAP_IMAGE_SRC_RE.sub(
+            lambda m: f"{m.group(1)}{src}{m.group(3)}", html, count=1
+        ), None
+
+    # 外置：图片与页面同目录，模板里已有的相对文件名在产物中依然成立
+    target = path.parent / MAP_IMAGE.name
+    if target.resolve() == MAP_IMAGE.resolve():
+        return html, None   # 输出目录就是 assets/，无需自我复制
+    src = match.group(2)
+    if src != MAP_IMAGE.name:
+        html = MAP_IMAGE_SRC_RE.sub(
+            lambda m: f"{m.group(1)}{MAP_IMAGE.name}{m.group(3)}", html, count=1
+        )
+    return html, target
+
+
 def render_page(*, cards_css: str, cards_html: str, mode: str,
                 out: Path, template: str | None = None,
-                spots: list | None = None) -> str:
+                spots: list | None = None,
+                inline_image: bool = False) -> str:
     """把景点、线路按钮、页内数据、卡片 CSS / HTML / 模式注入模板并原子写出。
 
     template / spots 可由入口传入已校验过的结果，避免重复读取大文件。
     块内默认内容只服务于“模板直接打开”，生成时整体替换。
+    inline_image=True 时把底图 base64 内联回单文件（默认外置，产物为 html + jpg 两个文件）。
     """
     if mode not in MODES:
         raise ValueError(f"未知页面模式：{mode}，应为 {' / '.join(MODES)}")
@@ -306,21 +346,34 @@ def render_page(*, cards_css: str, cards_html: str, mode: str,
             raise ValueError(f"模板标记未完全替换：{marker}")
 
     path = Path(os.path.abspath(os.path.expanduser(str(out))))
+    html, image_target = _apply_map_image(html, path=path, inline_image=inline_image)
+
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
+        # 先落图片再落页面：避免页面已可访问但图片还没写出的短暂破图
+        if image_target is not None:
+            _write_atomic(image_target, MAP_IMAGE.read_bytes())
         # 临时文件 + 原子替换，避免复制中断留下半截 HTML
-        tmp = path.with_name(path.name + ".tmp")
-        with open(tmp, "w", encoding="utf-8", newline="") as f:
-            f.write(html)
-        os.replace(tmp, path)
+        _write_atomic(path, html.encode("utf-8"))
     except OSError as exc:
+        raise OSError(f"写入页面失败：{exc}") from exc
+    return str(path)
+
+
+def _write_atomic(target: Path, payload: bytes) -> None:
+    """临时文件 + os.replace 原子替换；失败时清理临时文件。"""
+    tmp = target.with_name(target.name + ".tmp")
+    try:
+        with open(tmp, "wb") as f:
+            f.write(payload)
+        os.replace(tmp, target)
+    except OSError:
         try:
             if tmp.exists():
                 tmp.unlink()
-        except (OSError, UnboundLocalError):
+        except OSError:
             pass
-        raise OSError(f"写入页面失败：{exc}") from exc
-    return str(path)
+        raise
 
 
 def fail(message: str, code: int = 2) -> int:

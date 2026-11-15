@@ -2,7 +2,7 @@
 name: wuhan-guide
 display_name: 武汉导览
 display_name_en: Wuhan Guide
-description: 当用户表达「武汉全景导览」或「武汉线路／行程查询」两类意图时使用。全景导览输出单文件离线交互地图 HTML（可拖动手绘底图 + 由 spots.json 驱动的橙金编号 DOM 标签 + G1–G9 多选高亮 + 鼠标 3D 倾斜 + 景点简介弹窗 + 可视化景点编辑模式）与按片区编号清单，零接口调用、零网络请求；线路查询按 G1–G9 代号调用接口，输出结构化文字行程单，并在同一张页面底部的固定行程面板里按 G 分组铺开对应线路的行程卡片。两种模式共用同一份模板与同一个 ASCII 文件名 wuhan-guide.html，同名幂等覆盖，各自只执行一次脚本调用。单个景点详情交给 wuhan-scenic-intro，城市地情交给 wuhan-intro。
+description: 当用户表达「武汉全景导览」或「武汉线路／行程查询」两类意图时使用。全景导览输出离线交互地图 HTML（可拖动手绘底图 + 由 spots.json 驱动的橙金编号 DOM 标签 + G1–G9 多选高亮 + 景点简介弹窗 + 可视化景点编辑模式）与按片区编号清单，零接口调用、零网络请求；线路查询按 G1–G9 代号调用接口，输出结构化文字行程单，并在同一张页面底部的固定行程面板里按 G 分组铺开对应线路的行程卡片。两种模式共用同一份模板与同一个 ASCII 文件名 wuhan-guide.html，同名幂等覆盖，各自只执行一次脚本调用。单个景点详情交给 wuhan-scenic-intro，城市地情交给 wuhan-intro。
 description_zh: 「武汉全景导览」与「武汉线路／行程查询」的统一入口：一张单页双视图（离线交互地图 + 底部固定行程面板）；导览零接口只给路径与清单，线路一次调用同时产出文字行程单与同名单页；地图支持本地可视化编辑景点。
 description_en: Unified entry for "Wuhan panorama tour" and "Wuhan itinerary query" intents. Emits one offline single-page dual-view deliverable: a data-driven interactive spot map with a local visual editor plus a bottom itinerary drawer. The panorama mode makes zero API calls; the route mode makes exactly one call and writes the same wuhan-guide.html with itinerary cards.
 examples_zh:
@@ -30,7 +30,7 @@ allowed-tools: Bash(python3)
 
 ## 目的
 
-把「看全城」与「排行程」收敛到同一个技能、同一张页面。页面上半部是可拖动的手绘全景地图：底图为竖版武汉三镇鸟瞰图（自带行政区注记），固定高度视口内用鼠标／触摸拖动查看全图，方向键可平移、右上角「复位视图」或 Home 键回到初始位置；景点唯一事实源是 `assets/spots.json`，生成器按数组顺序渲染出「橙金编号 + 名称」玻璃标签、线路按钮与页内数据块，景点随底图同层平移，支持 G1–G9 多选高亮、鼠标 3D 倾斜与景点简介弹窗；右上角「编辑景点」可开启本地编辑模式：拖动定位、点击空白新增、点选改名称／类型／简介／所属线路或删除，改动写入浏览器 localStorage，可导出／导入 JSON，不写回仓库与接口。页面底部是磨砂玻璃行程面板：**固定展开、不可折叠**，全景导览时显示引导占位，线路查询时按 G1–G9 **每组一张卡片**（标题形如「G1 · 龟蛇主线」）、组内以紧凑单列列出该组景点；上方 G1–G9 与下方卡片一一对应，多选时只显示命中组、未选时显示全部；面板内不再重复放置线路与 G1–G9 按钮（地图控制条已有）。两种意图共用同一份模板与同一个输出文件名，后者同名覆盖前者。
+把「看全城」与「排行程」收敛到同一个技能、同一张页面。页面上半部是可拖动的手绘全景地图：底图为竖版武汉三镇鸟瞰图（自带行政区注记），固定高度视口内用鼠标／触摸拖动查看全图，方向键可平移、右上角「复位视图」或 Home 键回到初始位置；景点唯一事实源是 `assets/spots.json`，生成器按数组顺序渲染出「橙金编号 + 名称」玻璃标签、线路按钮与页内数据块，景点随底图同层平移，支持 G1–G9 多选高亮与景点简介弹窗（3D 倾斜已移除，换取拖动时的合成开销）；选中线路时视图平滑居中到该组点位的包围盒中心，取消选择则保持当前视野不动；右上角「编辑景点」可开启本地编辑模式：拖动定位、点击空白新增、点选改名称／类型／简介／所属线路或删除，改动写入浏览器 localStorage，可导出／导入 JSON，不写回仓库与接口。页面底部是磨砂玻璃行程面板：**固定展开、不可折叠**，全景导览时显示引导占位，线路查询时按 G1–G9 **每组一张卡片**（标题形如「G1 · 龟蛇主线」）、组内以紧凑单列列出该组景点；上方 G1–G9 与下方卡片严格对应，只显示选中组（未选时列表为空并显示占位提示）；面板内不再重复放置线路与 G1–G9 按钮（地图控制条已有）。两种意图共用同一份模板与同一个输出文件名，后者同名覆盖前者。
 
 | 意图 | 模式 | 网络 | 一次脚本调用产出 |
 | --- | --- | --- | --- |
@@ -96,7 +96,7 @@ allowed-tools: Bash(python3)
 
 4. 忠实使用 stdout 的景点名称、类型、停留时长、推荐指数、点评与片区，不增删、不改写、不自行重排；每条线路内部顺序以脚本输出（接口「排序」递增）为准。线路先后以脚本给出的天数顺序为准，保留「片区／本线时长／景点数／全程总时长」。单条线路只呈现该线路内容。
 
-5. 页面底部行程面板在此模式**固定展开、不提供折叠入口**，按 G1–G9 每组一张卡片（标题为「Gx · 线路名」），组内以紧凑单列列出该组景点，整组带 `data-route` 标记；行程区内不再重复放置线路与 G1–G9 按钮，地图控制条的 G1–G9 仍可多选，联动高亮地图点位并过滤卡片。未选线路时展示全部 9 张卡片。每组卡片右上角有「+」，可把未在本组的景点加进来（从原组移动，不复制），每行最右侧「×」把景点移出本组；增删会即时重编号并更新「N 个景点」，改动只作用于当前页面，不写回接口，刷新即恢复原始行程。标题行右侧是「分享」按钮：把下方全部 9 组当前行程（含本次增删）整理成纯文本，优先调用系统分享面板，不支持时复制到剪贴板并提示「已复制」；导览模式没有行程数据，分享按钮隐藏。
+5. 页面底部行程面板在此模式**固定展开、不提供折叠入口**，按 G1–G9 每组一张卡片（标题为「Gx · 线路名」），组内以紧凑单列列出该组景点，整组带 `data-route` 标记；行程区内不再重复放置线路与 G1–G9 按钮，地图控制条的 G1–G9 仍可多选，联动高亮地图点位并过滤卡片，同时把视图平滑居中到所选线路点位的包围盒中心。**未选线路时卡片区为空**（显示「未选择线路」占位），这是刻意行为。每组卡片右上角有「+」，可把未在本组的景点加进来（从原组移动，不复制），每行最右侧「×」把景点移出本组；增删会即时重编号并更新「N 个景点」，改动只作用于当前页面，不写回接口，刷新即恢复原始行程。标题行右侧是「分享」按钮：把下方**当前可见**的组（含本次增删）整理成纯文本，无可见组时按钮禁用，优先调用系统分享面板，不支持时复制到剪贴板并提示「已复制」；导览模式没有行程数据，分享按钮隐藏。
 
 6. 脚本以非零退出码失败时（HTTP 401/404/405/500、网络异常、模板校验失败），**向用户说明失败并给出 stderr 原始错误**，不得改用自身记忆回答线路内容、不重试、不换脚本再调。接口失败时脚本不写也不覆盖既有页面。
 
@@ -104,6 +104,7 @@ allowed-tools: Bash(python3)
 
 - 同一问题只落一个模式、最多一条 `Bash(python3)` 命令；不自动串联其他技能。
 - 产物固定为 `wuhan-guide.html`，两种模式同名幂等覆盖；先导览后线路时，后者覆盖前者为含行程卡片的版本，属预期行为，需向用户说明页面已更新。
+- 交付形态默认是**两个文件**：`wuhan-guide.html` + 同目录的 `wuhan-guide-map.jpg`（脚本自动写出）。向用户说明时点明两者需一起拷走/转发；确需单文件时加 `--inline-image`，底图会重新 base64 内联，代价是首屏解码变慢。
 - `map` 模式不做来源标注（无知识库来源）；`route` 模式按 `agents/jing-xiao-wu.md` 的输出规范标注来源并说明实时信息边界。
 
 ## 回答约束
@@ -117,8 +118,8 @@ allowed-tools: Bash(python3)
 
 ## 维护约定
 
-- 模板 `assets/wuhan-guide-map.html` 是唯一视觉与交互事实源，含内联 GSAP 3.12.5（保留许可头）与 2MB 级单行 base64 底图（JPEG，1920×2184），纯 LF 行尾。
-  **只许用脚本改，不许手改**：`tools/sync_template_defaults.py --write` 刷新四个默认块，`show_map.py` / `query_route.py` 负责注入与写出；`guide_common.load_template()` 会在读到 CRLF 时直接报错，`.gitattributes` 已把该文件标记为 `-text` 阻止 git 做换行转换。禁止在编辑器里格式化、全选重排或统一行尾，否则会破坏 base64 行。
+- 模板 `assets/wuhan-guide-map.html` 是唯一视觉与交互事实源，约 180KB，含内联 GSAP 3.12.5（保留许可头），纯 LF 行尾；底图已外置为同目录的 `assets/wuhan-guide-map.jpg`（1400×1592，JPEG q80，约 850KB）。
+  **只许用脚本改，不许手改**：`tools/sync_template_defaults.py --write` 刷新四个默认块，`show_map.py` / `query_route.py` 负责注入与写出；`guide_common.load_template()` 会在读到 CRLF 时直接报错，`.gitattributes` 已把该文件标记为 `-text` 阻止 git 做换行转换。禁止在编辑器里格式化、全选重排或统一行尾。
 - 景点数据唯一事实源是 `assets/spots.json`：`{version:1, spots:[{name,type,desc,x,y,w,area,routes}]}`，数组顺序即编号；`routes` 只写该景点所属的 G 代号。增删景点、改坐标／线路只改这个文件，再依次跑 `tools/sync_template_defaults.py --write`（刷模板默认块）与 `show_map.py --out ...`（生成页面）；热区、线路按钮与页内数据块都由 `guide_common` 生成。
 - `type` / `area` / `desc` 必须是正式文案，不要留 `自定义点位`、`自定义 · 手动新增`、`编辑模式下新增的点位…` 这类编辑器占位值——它们会直接出现在按片区清单、详情弹窗与行程卡片里。`area` 只用既有片区名：`汉口 · 江岸／江汉`、`汉阳 · 龟山／月湖`、`武昌 · 黄鹤楼／长江大桥`、`武昌 · 中南／洪山`、`东湖 · 沙湖`、`光谷 · 南湖`，新增片区需同步确认清单可读性。
 - 模板注入分两类，每个标记各恰好出现一次，`load_template()` 会校验数量，缺失或重复直接报错：
@@ -134,14 +135,18 @@ allowed-tools: Bash(python3)
 - 抽屉内不再放置 `gd-route-btn` 等线路按钮，避免与地图控制条重复；新增 DOM 不要复用 `class="hotspot"` 或 `class="route-btn"` 作为纯装饰。
 - 组内增删景点是纯前端编辑：`spotPool` 以景点名为键持有页面里已有的全部 `article.gc-card` 节点（数量随接口当次返回而定，不写死），「+」把候选节点移入目标组，「×」把节点从组内摘除，随后重编号并刷新「N 个景点」。每行左侧的 `.gc-drag` 把手用 pointer 事件在同一 `.gc-grid` 内上下移动节点（支持触屏，聚焦后 ↑↓ 也可调整），松手后重编号。**不要**为这些编辑引入接口写回、localStorage 或额外数据文件；刷新页面即回到接口原始行程，这是刻意行为。
 - 分享按钮 `#guideShare` 取代了旧的「N 组已选」徽标：`itineraryText()` 从 DOM 读取当前 9 组卡片（含增删）拼文本，`navigator.share` 优先、`clipboard.writeText` 兜底、最后 `execCommand` 复制；成功后按钮短暂显示「已分享／已复制」。改这块时保持“从 DOM 取数”，不要另建一份行程数据源，否则会和筛选、增删状态脱节。
-- 地图拖动由独立的 vanilla JS `<script>` 实现，不依赖 GSAP：`.map-shell` 是固定高度视口（`overflow:clip` + `touch-action:none`），`.map-canvas` 包住 `<img class="map-art">` 与 `.hotspot-layer`，只改 `.map-canvas` 的 `transform:translate3d()` 并钳制到 `[minX,0] / [minY,0]`；3D 视差仍由 GSAP 作用在 `.map-shell` 上，拖动期间用 `is-dragging` 暂停。视口用 `clip` 而非 `hidden`：`hidden` 仍是可滚动容器，聚焦边缘景点会被浏览器内部滚动、打乱视图。**不要**给 shell 用 `setPointerCapture`（会把点位 `click` 的 target 重定向到 shell，弹窗失效），改用 window 级 `pointermove/pointerup`；拖动超过 6px 时在捕获阶段吞掉随后那次 `click`，避免误开详情弹窗。右上角「复位视图」与 Home／0 键回到初始视图。
+- 地图拖动由独立的 vanilla JS `<script>` 实现，不依赖 GSAP：`.map-shell` 是固定高度视口（`overflow:clip` + `touch-action:none`），`.map-canvas` 包住 `<img class="map-art">` 与 `.hotspot-layer`，只改 `.map-canvas` 的 `transform:translate3d()` 并钳制到 `[minX,0] / [minY,0]`。**尺寸只在 measure() 里读一次**（首帧、图片 load、resize），pointermove 里只做算术与样式写，且写入用 `scheduleApply()` 合并到下一帧——否则每帧读 `clientWidth/offsetWidth` 会强制同步布局。视口用 `clip` 而非 `hidden`：`hidden` 仍是可滚动容器，聚焦边缘景点会被浏览器内部滚动、打乱视图。**不要**给 shell 用 `setPointerCapture`（会把点位 `click` 的 target 重定向到 shell，弹窗失效），改用 window 级 `pointermove/pointerup`；拖动超过 6px 时在捕获阶段吞掉随后那次 `click`，避免误开详情弹窗。右上角「复位视图」与 Home／0 键回到初始视图。
 - 生成页面时编号由 `spots.json` 数组顺序决定；浏览器内新增景点追加到末尾，删除后自动重排。不要把编号写进 JSON，也不要再引入第二份景点清单或 `AREA_GROUPS` 之类的硬编码分组。
+- 视图居中走自定义事件 `guide:pan-to`（`detail={x,y,duration}`，x/y 为相对底图的百分比），由平移 IIFE 换算成 `translate3d` 并做 400ms easing；`px/py` 是该 IIFE 的私有状态，**不要**再从其它脚本直接改 `.map-canvas` 的 `transform`，否则两处写同一属性必然打架。动画期间同样挂 `is-panning`（摘掉标签模糊），用户 pointerdown 会 `cancelPan()` 立刻接管；`prefers-reduced-motion` 下直接跳转。
+- 线路按钮点击后先由业务层更新 `aria-pressed`，再 `focusRouteSpots()` 取选中组点位的包围盒中心派发居中事件；只用包围盒而不取质心，避免个别远端点位把中心拽偏。编辑模式拖动点位**不**重新居中（`guide:spots-changed` 只重算高亮），否则拖一个点视野会跟着跑。
+- 行程卡片组与 G1–G9 是严格一一对应：`sync()` 只显示 `chosen` 命中的组，未选为空并显示 `#guideCardsEmpty` 占位（仅 route 模式；map 模式仍是导览引导占位）。`itineraryText()` 只导出 `.gc-route:not(.gc-hidden)`，因此分享内容与所见一致。
 - stdout 为用户可见正文（页面路径、按片区清单、文字行程单），stderr 为运行元数据（来源、热区／线路数、sha256 前 16、预览 403 提示、接口与图片统计）。禁止打印 base64、接口原始大 payload 或任何 PII。
 
 ## 资源
 
 - `assets/spots.json`：景点唯一数据源（名称、类型、简介、坐标、片区、所属线路），数组顺序即编号；生成器据此渲染热区、线路按钮与页内数据块。
-- `assets/wuhan-guide-map.html`：唯一单页模板（约 2.5MB 单文件）。内置 `spots.json` 当前快照对应的热区与线路按钮、内联数据与导览占位，**直接双击/预览即可完整使用**；可拖动平移的竖版底图、G1–G9 多选筛选、3D 倾斜／弹窗、景点编辑工具条与属性面板、底部固定展开的行程区（每组一张卡片）均在此文件内；无 CDN、无外链，离线可预览。
+- `assets/wuhan-guide-map.html`：唯一单页模板（约 180KB）。内置 `spots.json` 当前快照对应的热区与线路按钮、内联数据与导览占位，**直接双击/预览即可完整使用**（底图取同目录的 `wuhan-guide-map.jpg`）；可拖动平移的竖版底图、G1–G9 多选筛选、弹窗、景点编辑工具条与属性面板、底部固定展开的行程区（每组一张卡片）均在此文件内；无 CDN、无外链。
+- `assets/wuhan-guide-map.jpg`：外置底图（1400×1592，JPEG q80，约 850KB）。由原 1920×2184 底图降采样重编码而来；改图后须同步模板 `<img class="map-art">` 的 `width`/`height`。
 - `scripts/guide_common.py`：唯一渲染契约与共享工具。令牌/块标记常量、`load_spots()`（校验名称唯一／坐标 0–100／线路合法）、`route_spots()`、`render_spots_html()`／`render_route_btns()`／`render_spots_json()`、`spots_digest()`、`load_template()`、`render_page()`（块替换 + 精确替换 + 临时文件 + `os.replace` 原子写）、`render_list()`／`preview_hint`／`page_digest`，两个入口共用。
 - `scripts/show_map.py`：导览模式薄入口，零网络、零接口，注入引导占位与 `map` 模式。
 - `scripts/query_route.py`：线路模式入口。保留 `fetch_records()`／`normalize()`／`build_thumbs()`／`render()` 与全套 CLI（`codes`／`--days`／`--find`／`--all`／`--no-sort`／`--no-image`／`--out`）；`render_card_fragment()` 只返回作用域化 CSS 与卡片片段（每条线路一个 `section.gc-route[data-route]`，标题为「Gx · 线路名」），交给 `guide_common.render_page()` 注入同一模板。图片默认并发预取后 base64 内联，单张内联失败则省略该图并给出占位说明，页面不产生任何外链请求；`--no-image` 可切换轻量模式。
