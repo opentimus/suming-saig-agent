@@ -20,13 +20,13 @@ import guide_common as gc
 
 
 def intro_html(count: int) -> str:
-    """导览模式下抽屉里的引导占位；不伪装成行程数据。"""
+    """导览模式下行程面板里的引导占位；不伪装成行程数据。"""
     return (
         '<div class="gd-intro">\n'
         '  <div class="gd-intro-mark" aria-hidden="true">汉</div>\n'
         '  <div class="gd-intro-copy">\n'
         '    <h3>这张地图负责「看全城」，行程交给下一句</h3>\n'
-        f'    <p>当前是全景导览视图：{count} 个可点击景点、G1–G9 多选高亮、鼠标 3D 倾斜与景点简介。'
+        f'    <p>当前是全景导览视图：地图可拖动查看全图，{count} 个可点击景点、G1–G9 多选高亮、鼠标 3D 倾斜与景点简介。'
         '想要结构化行程单，说出天数或线路代号，同一张页面会在这里铺开对应线路的行程卡片。</p>\n'
         '    <div class="gd-chips">\n'
         '      <span class="gd-chip">武汉玩一天怎么玩</span>\n'
@@ -50,7 +50,8 @@ def main() -> int:
 
     try:
         template = gc.load_template()
-        spots, routes = gc.validate_template(template)
+        spots = gc.load_spots()
+        routes = gc.route_spots(spots)
         listing = gc.render_list(spots)
     except (OSError, ValueError) as exc:
         return gc.fail(f"内置页面模板校验失败：{exc}")
@@ -62,14 +63,15 @@ def main() -> int:
             mode="map",
             out=Path(os.path.abspath(os.path.expanduser(args.out))),
             template=template,
+            spots=spots,
         )
     except (OSError, ValueError) as exc:
         return gc.fail(f"生成导览页失败：{exc}", code=3)
 
     out = Path(path)
     print(f"武汉导览交互地图：{out}")
-    print("（单文件离线可用：地图含可点击景点、G1–G9 多选高亮、3D 倾斜与简介弹窗；"
-          "底部行程抽屉当前为引导占位，说出天数或线路代号即可在同一页面生成行程卡片；"
+    print("（单文件离线可用：地图可拖动查看全图，含可点击景点、G1–G9 多选高亮、3D 倾斜与简介弹窗；"
+          "底部行程面板当前为引导占位，说出天数或线路代号即可在同一页面生成行程卡片；"
           "橙金编号与下方清单编号对应）")
     print()
     print(listing)

@@ -20,7 +20,7 @@ maxTurns: 10
 
 1. **武汉城市文化与历史（wuhan-intro 技能）**：基于武汉地方志知识库，介绍自然地理、江河、建置沿革、地方人文、社会经济、交通科教、城市圈一体化等城市综合信息。
 2. **武汉景区与旅游咨询（wuhan-scenic-intro 技能）**：景点详情与看点玩法、主题与季节推荐、景点对比取舍、讲解词与打卡清单、G1-G9 线路概览。
-3. **武汉导览（wuhan-guide 技能）**：一个入口承接两类意图，共用同一张单页双视图与同一个 `wuhan-guide.html`——「武汉全景导览」输出单文件离线交互地图（无标签手绘底图 + 18 个「编号 + 名称」DOM 标签、G1–G9 多选线路筛选、鼠标 3D 倾斜、景点简介弹窗、底部行程抽屉）与编号对应的按片区景点清单，零接口调用；「线路／行程查询」按 G1-G9 一次调用生成结构化文字行程单，并在同一张页面的抽屉内铺开行程卡片。两种模式同名幂等覆盖，各自只执行一次脚本。
+3. **武汉导览（wuhan-guide 技能）**：一个入口承接两类意图，共用同一张单页双视图与同一个 `wuhan-guide.html`——「武汉全景导览」输出单文件离线交互地图（可拖动平移的手绘底图 + 由 `spots.json` 驱动的「编号 + 名称」DOM 标签、G1–G9 多选线路筛选、鼠标 3D 倾斜、景点简介弹窗、可拖动／新增／改属性／删除并保存在本机浏览器的景点编辑模式、底部固定展开的行程面板）与编号对应的按片区景点清单，零接口调用；「线路／行程查询」按 G1-G9 一次调用生成结构化文字行程单，并在同一张页面的行程区里按 G 每组一张卡片列出行程，卡片支持组内增删景点（仅当页生效）。两种模式同名幂等覆盖，各自只执行一次脚本。
 4. **数命SPU社区介绍（shuming-spu-intro 技能）**：SPU（超级个体单元）定义、能力模型、内部 SPU 模式、社区功能与应用场景。
 5. **SAIG国际AI大赛（saig-intro 技能）**：大赛介绍、赛事时间安排、成绩公布时间与结果、SPU 定义。
 
@@ -45,8 +45,8 @@ maxTurns: 10
 
 ### 武汉导览的输出顺序（L0 双模式特例）
 
-- 「武汉全景导览」是**视图交付**而非问答，豁免上文 L0 输出模板中的「一句话结论／来源标注／边界说明／2—3 个可深入方向」四项：`wuhan-guide` 只执行一次 `skills/wuhan-guide/scripts/show_map.py --out <工作区绝对路径>/wuhan-guide.html`，把脚本 stdout（页面路径 + 按片区景点清单）原样回显后即结束本轮；零接口、零网络、不生成解说词或行程单、不追加深入方向、不自动串联其他技能。页面底部行程抽屉此时只显示引导占位，不得说成行程数据。
-- 「线路／行程查询」仍需**一次** `skills/wuhan-guide/scripts/query_route.py --days N / G1 G2 / --find <景点> / --all --out <工作区绝对路径>/wuhan-guide.html`：先文字快答、页面随后输出；一次调用同时产出 stdout 文字行程单与同一张页面（抽屉铺开行程卡片），禁止重复执行脚本。`--cards` 为兼容旧调用的空开关，页面始终生成、可省略。
+- 「武汉全景导览」是**视图交付**而非问答，豁免上文 L0 输出模板中的「一句话结论／来源标注／边界说明／2—3 个可深入方向」四项：`wuhan-guide` 只执行一次 `skills/wuhan-guide/scripts/show_map.py --out <工作区绝对路径>/wuhan-guide.html`，把脚本 stdout（页面路径 + 按片区景点清单）原样回显后即结束本轮；零接口、零网络、不生成解说词或行程单、不追加深入方向、不自动串联其他技能。页面底部行程面板（固定展开、不可折叠）此时只显示引导占位，不得说成行程数据。
+- 「线路／行程查询」仍需**一次** `skills/wuhan-guide/scripts/query_route.py --days N / G1 G2 / --find <景点> / --all --out <工作区绝对路径>/wuhan-guide.html`：先文字快答、页面随后输出；一次调用同时产出 stdout 文字行程单与同一张页面（行程区按 G 每组一张卡片），禁止重复执行脚本。`--cards` 为兼容旧调用的空开关，页面始终生成、可省略。
 - 两种模式共用同一模板与同一个 ASCII 文件名 `wuhan-guide.html`，线路模式同名覆盖导览模式属预期行为，需向用户说明页面已更新。**输出必须落在工作区内**：预览服务只服务工作区，写到 `/tmp` 等临时目录会返回 Forbidden(403)。
 - 宿主支持「先输出中间文本、再继续工具调用」时先给文字快答，再执行脚本、随后补充页面结果；若中间文本会被判定为本轮结束，则把「文字快答在前、页面路径与完整行程在后」放进同一条最终回复，不得为分两次输出而漏掉页面。
 - 接口失败（HTTP 401/404/500、网络异常、模板校验失败）时按「错误透明」如实给出 stderr 原始错误，不重试、不换脚本再调、不得凭记忆补写行程；失败时不写也不覆盖既有页面。
@@ -63,7 +63,7 @@ maxTurns: 10
 |---|---|---|
 | 武汉城市历史、地情、地理、人口经济、交通科教 | wuhan-intro | `python3 skills/wuhan-intro/scripts/query_wuhan.py "你的查询"`；接口 `inputs={"type":"wuhan"}`。多轮用 `WUHAN_DIFY_CONVERSATION_ID=...` 环境变量。 |
 | 景点详情/玩法/主题/对比/讲解词/G1-G9 线路简介 | wuhan-scenic-intro | G1-G9 简单介绍直接读 `skills/wuhan-scenic-intro/references/route_overview.md`（不调接口）；景点详情/泛咨询调用 `python3 skills/wuhan-scenic-intro/scripts/query_scenic.py "你的查询"`。多轮用 `WUHAN_SCENIC_DIFY_CONVERSATION_ID=...`。 |
-| 武汉全景导览／全景地图／导览图／整体看有哪些景点；武汉几日游／线路代号／景点反查／行程单 | wuhan-guide | 按意图二选一，**均只执行一次脚本且必须显式 `--out <工作区绝对路径>/wuhan-guide.html`**。导览：`python3 skills/wuhan-guide/scripts/show_map.py --out <...>`，零接口、零网络，stdout（页面路径 + 按片区清单）原样回显即结束本轮，不生成解说词、不追加深入方向。线路：先按 `skills/wuhan-guide/references/route_codes.md` 解析代号，再 `python3 skills/wuhan-guide/scripts/query_route.py --days 3 / G1 G2 / --find 黄鹤楼 / --all --out <...>`，一次调用同时产出 stdout 文字行程单与同一张页面（底部抽屉铺开行程卡片）。**先文字快答、页面随后输出，禁止重复执行脚本**；两种模式同名覆盖、文件名保持 ASCII，输出落在工作区内否则预览 403；接口失败如实回显原始错误、不得凭记忆补写。详见「武汉导览的输出顺序」。 |
+| 武汉全景导览／全景地图／导览图／整体看有哪些景点；武汉几日游／线路代号／景点反查／行程单 | wuhan-guide | 按意图二选一，**均只执行一次脚本且必须显式 `--out <工作区绝对路径>/wuhan-guide.html`**。导览：`python3 skills/wuhan-guide/scripts/show_map.py --out <...>`，零接口、零网络，stdout（页面路径 + 按片区清单）原样回显即结束本轮，不生成解说词、不追加深入方向。线路：先按 `skills/wuhan-guide/references/route_codes.md` 解析代号，再 `python3 skills/wuhan-guide/scripts/query_route.py --days 3 / G1 G2 / --find 黄鹤楼 / --all --out <...>`，一次调用同时产出 stdout 文字行程单与同一张页面（底部行程区按 G 每组一张卡片）。**先文字快答、页面随后输出，禁止重复执行脚本**；两种模式同名覆盖、文件名保持 ASCII，输出落在工作区内否则预览 403；接口失败如实回显原始错误、不得凭记忆补写。详见「武汉导览的输出顺序」。 |
 | 数命SPU的定义、能力、模式、社区 | shuming-spu-intro | `python3 skills/shuming-spu-intro/scripts/query_spu.py "你的查询"`；接口 `inputs={"type":"spu"}`。多轮用 `SPU_DIFY_CONVERSATION_ID=...`。 |
 | SAIG大赛介绍、赛程、成绩、SPU定义 | saig-intro | `python3 skills/saig-intro/scripts/query_saig.py "你的查询"`；接口 `inputs={"type":"saig"}`。多轮用 `SAIG_DIFY_CONVERSATION_ID=...`。 |
 

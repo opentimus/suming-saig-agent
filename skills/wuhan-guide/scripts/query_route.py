@@ -490,48 +490,79 @@ def build_thumbs(urls: list, tmpdir: str, workers: int = IMAGE_WORKERS) -> dict:
 
 GUIDE_CARDS_CSS = """
 /* 全部选择器作用域到抽屉挂载点 .gd-cards，避免与地图 body / :root / @media 规则冲突 */
-.gd-cards{padding:14px 0 4px;border-top:1px solid rgba(25,54,76,.1)}
+.gd-cards{padding:12px 0 4px}
 .gd-cards .gc-root{font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;color:#19364c}
 .gd-cards .gc-root *{box-sizing:border-box}
-.gd-cards .gc-banner{
-  padding:14px 18px;margin:0 0 16px;border-radius:14px;
-  background:linear-gradient(135deg,rgba(255,255,255,.82),rgba(232,244,248,.6));
-  border:1px solid rgba(255,255,255,.9);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+.gd-cards .gc-sub{font-size:11px;font-weight:600;color:#758b96;line-height:1.55}
+/* 每个 G 组 = 一张独立卡片；组内景点是卡片里的紧凑行，不再各占一张卡 */
+.gd-cards .gc-route{
+  position:relative;margin:0 0 14px;padding:16px 18px 10px;border-radius:18px;
+  background:linear-gradient(160deg,rgba(255,255,255,.97),rgba(243,249,251,.92));
+  border:1px solid rgba(255,255,255,.98);
+  box-shadow:0 12px 30px rgba(31,74,99,.14),inset 0 1px 0 rgba(255,255,255,.98);
 }
-.gd-cards .gc-banner h1{margin:0 0 5px;font-size:17px;font-weight:800;letter-spacing:.02em}
-.gd-cards .gc-sub{font-size:11.5px;font-weight:600;color:#758b96;line-height:1.6}
-.gd-cards .gc-route{margin:0 0 18px}
 .gd-cards .gc-route.gc-hidden{display:none}
 .gd-cards .gc-day{
-  margin:0 0 4px;font-size:14px;font-weight:800;color:#19364c;
-  display:flex;align-items:center;gap:8px;
+  margin:0 0 3px;font-size:15px;font-weight:800;color:#19364c;
+  display:flex;align-items:center;gap:9px;
 }
 .gd-cards .gc-day::before{
-  content:"";width:4px;height:15px;border-radius:99px;flex:none;
-  background:linear-gradient(180deg,#f2ae4c,#c9741c);
+  content:"";width:4px;height:16px;border-radius:99px;flex:none;
+  background-color:var(--gc-accent,#c9741c);
+  background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(0,0,0,.12));
 }
-.gd-cards .gc-grid{display:grid;grid-template-columns:1fr;gap:10px}
+.gd-cards .gc-day-code{
+  flex:none;padding:2px 9px;border-radius:99px;
+  font-size:10.5px;font-weight:800;letter-spacing:.08em;line-height:1.6;color:#fff;
+  background-color:var(--gc-accent,#2b7fb8);
+  background-image:linear-gradient(140deg,rgba(255,255,255,.24),rgba(0,0,0,.14));
+  box-shadow:0 2px 6px rgba(31,74,99,.24);
+}
+.gd-cards .gc-day-name{font-size:15px;font-weight:800;color:#19364c}
+/* 组卡片右上角「+」：把未在本组的景点加进来 */
+.gd-cards .gc-add{
+  margin-left:auto;flex:none;width:26px;height:26px;padding:0;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid rgba(43,127,184,.3);background:rgba(255,255,255,.94);color:#2b7fb8;
+  font-size:16px;font-weight:700;line-height:1;cursor:pointer;
+  box-shadow:0 2px 8px rgba(31,74,99,.12);
+  transition:background .22s,color .22s,transform .22s cubic-bezier(.2,.8,.2,1);
+}
+.gd-cards .gc-add:hover{background:linear-gradient(140deg,#55b6e8,#2b7fb8);color:#fff;transform:rotate(90deg)}
+.gd-cards .gc-add:focus-visible{outline:2px solid #df8e2e;outline-offset:2px}
+.gd-cards .gc-grid{display:grid;grid-template-columns:1fr;gap:0;margin-top:6px}
 .gd-cards .gc-card{
-  padding:14px 16px;border-radius:13px;
-  display:grid;grid-template-columns:minmax(0,1fr) 320px;
-  grid-template-areas:"head thumbs" "meta thumbs" "review thumbs";
-  column-gap:20px;align-items:start;
-  background:linear-gradient(160deg,rgba(255,255,255,.94),rgba(240,248,250,.82));
-  border:1px solid rgba(255,255,255,.95);
-  box-shadow:0 4px 14px rgba(31,74,99,.1),inset 0 1px 0 rgba(255,255,255,.9);
-  transition:transform .24s cubic-bezier(.2,.8,.2,1),box-shadow .24s;
+  padding:11px 2px;border-radius:0;
+  display:grid;grid-template-columns:minmax(0,1fr) 300px 26px;
+  grid-template-areas:"head thumbs act" "meta thumbs act" "review thumbs act";
+  column-gap:18px;align-items:start;
+  background:none;border:0;border-top:1px solid rgba(25,54,76,.09);
+  box-shadow:none;transition:background .22s;
 }
-.gd-cards .gc-card:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(31,74,99,.2)}
+.gd-cards .gc-card:first-child{border-top:0}
+.gd-cards .gc-card:hover{background:linear-gradient(90deg,rgba(85,182,232,.07),rgba(230,154,50,.05))}
 .gd-cards .gc-card-h{grid-area:head;display:flex;align-items:center;gap:9px;margin-bottom:5px}
 .gd-cards .gc-num{
   width:23px;height:23px;border-radius:7px;flex:none;
   display:inline-flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:800;color:#fff;text-shadow:0 1px 1px rgba(120,65,10,.35);
-  background:linear-gradient(140deg,#f2ae4c,#e69a32 45%,#c9741c);
-  box-shadow:0 2px 6px rgba(115,65,10,.3);
+  font-size:11px;font-weight:800;color:#fff;text-shadow:0 1px 1px rgba(20,45,60,.42);
+  /* 编号底色跟随所在 G 组主题色，与地图编号牌保持一致 */
+  background-color:var(--gc-accent,#e69a32);
+  background-image:linear-gradient(140deg,rgba(255,255,255,.32),rgba(255,255,255,0) 56%,rgba(0,0,0,.12));
+  box-shadow:0 2px 6px rgba(20,45,60,.3);
 }
 .gd-cards .gc-card-h h3{margin:0;font-size:13.5px;font-weight:800;color:#19364c}
+/* 每行最右侧的删除图标 */
+.gd-cards .gc-del{
+  grid-area:act;align-self:center;justify-self:end;flex:none;
+  width:24px;height:24px;padding:0;border-radius:8px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid rgba(201,116,28,.28);background:rgba(255,255,255,.9);color:#c9741c;
+  font-size:13px;font-weight:700;line-height:1;cursor:pointer;opacity:.5;
+  transition:opacity .2s,background .2s,color .2s,border-color .2s;
+}
+.gd-cards .gc-card:hover .gc-del,.gd-cards .gc-del:focus-visible{opacity:1}
+.gd-cards .gc-del:hover{background:#c9741c;border-color:#c9741c;color:#fff}
 .gd-cards .gc-meta{grid-area:meta;font-size:10.5px;font-weight:600;color:#758b96;margin-bottom:4px;line-height:1.6}
 .gd-cards .gc-review{grid-area:review;font-size:11.5px;line-height:1.7;color:#4d6b7b;margin:0}
 .gd-cards .gc-thumbs{grid-area:thumbs;align-self:center;display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;margin-top:0;max-width:320px}
@@ -543,13 +574,51 @@ GUIDE_CARDS_CSS = """
 .gd-cards .gc-nopic{
   font-size:11px;color:#9aabb4;background:rgba(255,255,255,.6);
   border:1px dashed rgba(85,182,232,.4);border-radius:9px;
-  padding:10px;text-align:center;margin-top:0;grid-column:2;grid-row:1 / -1;align-self:center;
+  padding:10px;text-align:center;margin-top:0;grid-column:2 / 4;grid-row:1 / -1;align-self:center;
 }
 .gd-cards .gc-foot{font-size:10.5px;line-height:1.7;color:#8aa0aa;margin:6px 0 0}
+/* 「+」展开的候选景点面板 */
+.gd-cards .gc-picker{
+  position:absolute;right:16px;top:46px;z-index:6;width:min(320px,88%);
+  max-height:290px;display:flex;flex-direction:column;
+  border-radius:16px;border:1px solid rgba(255,255,255,.96);
+  background:rgba(255,255,255,.98);box-shadow:0 20px 46px rgba(20,52,72,.26);
+}
+.gd-cards .gc-picker[hidden]{display:none}
+.gd-cards .gc-picker-h{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 12px 6px;font-size:11.5px;font-weight:800;color:#25455c;
+}
+.gd-cards .gc-picker-x{border:0;background:none;padding:0 2px;color:#8aa0aa;font-size:15px;line-height:1;cursor:pointer}
+.gd-cards .gc-picker-x:hover{color:#c9741c}
+.gd-cards .gc-picker-q{
+  margin:0 12px 8px;padding:7px 10px;border-radius:9px;outline:none;
+  font-family:inherit;font-size:11.5px;color:#19364c;
+  border:1px solid rgba(85,182,232,.32);background:rgba(255,255,255,.96);
+}
+.gd-cards .gc-picker-q:focus{border-color:#55b6e8;box-shadow:0 0 0 3px rgba(85,182,232,.16)}
+.gd-cards .gc-picker-list{overflow:auto;padding:0 8px 10px;display:flex;flex-direction:column;gap:2px}
+.gd-cards .gc-picker-item{
+  display:flex;align-items:center;gap:8px;padding:7px 6px;border:0;border-radius:9px;
+  background:none;text-align:left;cursor:pointer;
+  font-family:inherit;font-size:11.5px;font-weight:600;color:#25455c;
+}
+.gd-cards .gc-picker-item:hover{background:linear-gradient(90deg,rgba(85,182,232,.14),rgba(230,154,50,.1))}
+.gd-cards .gc-picker-code{
+  flex:none;padding:1px 6px;border-radius:99px;font-size:9.5px;font-weight:800;letter-spacing:.06em;
+  color:#2b7fb8;background:rgba(85,182,232,.16);
+}
+.gd-cards .gc-picker-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gd-cards .gc-empty{margin:0;padding:12px 6px;font-size:11px;color:#9aabb4}
 @media(max-width:650px){
- .gd-cards .gc-banner{padding:12px 14px}
- .gd-cards .gc-card{grid-template-columns:1fr;grid-template-areas:"head" "meta" "review" "thumbs";row-gap:6px}
+ .gd-cards .gc-route{padding:13px 13px 6px;border-radius:15px}
+ .gd-cards .gc-card{
+   grid-template-columns:minmax(0,1fr) 26px;
+   grid-template-areas:"head act" "meta act" "review act" "thumbs act";
+   row-gap:6px;padding:10px 0;
+ }
  .gd-cards .gc-thumbs,.gd-cards .gc-nopic{grid-column:1;grid-row:auto;max-width:100%;margin-top:6px;align-self:auto}
+ .gd-cards .gc-picker{right:10px;top:42px;width:min(300px,94%)}
 }
 """
 
@@ -563,8 +632,6 @@ def render_card_fragment(codes, records, heading, sort=True, show_images=True) -
     groups = {c: [r for r in records if r["code"] == c] for c in codes}
     if sort:
         groups = {c: sort_spots(g) for c, g in groups.items()}
-    total_hours = sum(parse_hours(r["duration"]) for c in codes for r in groups[c])
-    total_spots = sum(len(groups[c]) for c in codes)
     # 占位图判定基于全量记录（全局属性），与本次渲染哪些线路无关
     placeholder = images_are_placeholder(records)
 
@@ -581,7 +648,7 @@ def render_card_fragment(codes, records, heading, sort=True, show_images=True) -
                             need.append(u)
         thumbs = build_thumbs(need, tmpdir) if need else {}
 
-        for idx, code in enumerate(codes, start=1):
+        for code in codes:
             group = groups[code]
             areas = []
             for r in group:
@@ -632,23 +699,23 @@ def render_card_fragment(codes, records, heading, sort=True, show_images=True) -
                     '</span><h3>' + html.escape(r["spot"]) + '</h3></div><div class="gc-meta">' +
                     meta + '</div>' + review + imgs + '</article>'
                 )
-            sub = ('<h2 class="gc-day">第' + str(idx) + '天 · ' + ROUTE_NAMES[code] +
+            sub = ('<h2 class="gc-day"><span class="gc-day-code">' + code + '</span>' +
+                   '<span class="gc-day-name">' + html.escape(ROUTE_NAMES[code]) + '</span>' +
                    '</h2><div class="gc-sub">片区：' + html.escape("、".join(areas)) + ' ｜ 本线时长：' +
                    fmt_hours(line_hours) + ' ｜ ' + str(len(group)) + ' 个景点</div>')
             sections.append(
-                '<section class="gc-route" data-route="' + code + '">' +
+                '<section class="gc-route" data-route="' + code + '" style="--gc-accent:var(--g' +
+                code.lstrip("G") + ')">' +
                 sub + '<div class="gc-grid">' + "".join(cards) + '</div></section>'
             )
 
-    banner_title = (heading.strip() + " 行程卡片") if heading.strip() else "武汉行程卡片"
-    banner = ('<div class="gc-banner"><h1>' + html.escape(banner_title) +
-              '</h1><div class="gc-sub">全程约 ' + fmt_hours(total_hours) +
-              ' ｜ 共 ' + str(total_spots) + ' 个景点</div></div>')
+    aria = ((heading.strip() + " 行程卡片") if heading.strip() else "武汉行程卡片")
     foot = ('<p class="gc-foot">图片来自接口「图片1/2/3」字段，缩放后内联。相同 URL 已自动去重。'
             + ('<br>检测到全表图片为同一组占位图，卡片已隐藏图片，待后台按景点补齐真实配图后自动恢复。'
                if placeholder else '')
             + '</p>')
-    fragment = '<div class="gc-root">' + banner + "".join(sections) + foot + '</div>'
+    fragment = ('<div class="gc-root" role="region" aria-label="' + html.escape(aria) + '">'
+                + "".join(sections) + foot + '</div>')
     return GUIDE_CARDS_CSS, fragment
 
 
