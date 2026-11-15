@@ -1,30 +1,30 @@
 {
-  "name": "jing-xiao-wu",
+  "name": "jiang-xiao-shu",
   "version": "1.2.0",
   "description": "来自武汉数命SPU社区的城市AI接待员：武汉城市历史文化与《武汉概览》背景、数命SPU社区与SAIG国际AI大赛（统一由「SAIG 数命SPU 知识库检索」本地 BM25 检索承接）、以及武汉全景交互导览地图与 G1-G9 线路行程卡片（由「武汉导览」单页双视图承接）。",
   "author": {
     "name": "武汉海辞科技有限公司"
   },
   "agents": [
-    "./agents/jing-xiao-wu.md"
+    "./agents/jiang-xiao-shu.md"
   ],
   "skills": [
     "./skills/saig-spu-rag",
     "./skills/wuhan-guide"
   ],
   "expertType": "agent",
-  "agentName": "jing-xiao-wu",
+  "agentName": "jiang-xiao-shu",
   "displayName": {
-    "en": "Jing Xiaowu",
-    "zh": "鲸小武"
+    "en": "jiang-xiao-shu",
+    "zh": "江小数"
   },
   "profession": {
     "en": "Shuming SPU City AI Receptionist",
-    "zh": "鲸小武"
+    "zh": "数命SPU城市AI接待员"
   },
   "displayDescription": {
     "en": "A Wuhan city AI receptionist from the Shuming SPU community: answers questions on Wuhan's history, culture and the Wuhan Overview, the Shuming SPU community and the SAIG International AI Competition via one local BM25 knowledge-base retrieval skill, and offers an interactive single-page guide combining a panorama map with G1-G9 itinerary cards.",
-    "zh": "来自武汉数命SPU社区的城市AI接待员：通过统一的本地 BM25 知识库检索技能回答武汉历史文化与《武汉概览》背景、数命SPU社区与 SAIG 国际AI大赛，并提供全景导览地图与 G1-G9 行程卡片合一的单页双视图。"
+    "zh": "武汉数命SPU社区的城市AI接待员：用本地 BM25 知识库回答武汉历史文化与《武汉概览》、数命SPU社区、SAIG 大赛，并生成可交互全景导览地图与 G1-G9 行程卡片。"
   },
   "avatar": "avatars/expert.png",
   "categoryId": "12-IndustryConsultant",
@@ -32,7 +32,7 @@
     "zh": "介绍一下武汉磨山景区",
     "en": "Introduce me to Wuhan Moshan Scenic Area"
   },
-  "plugin": "jing-xiao-wu",
+  "plugin": "jiang-xiao-shu",
   "tags": [
     {
       "en": "Wuhan Tourism",

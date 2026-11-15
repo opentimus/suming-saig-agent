@@ -1,4 +1,4 @@
-# Jing Xiaowu
+# jiang-xiao-shu
 
 来自武汉的数命SPU城市AI接待员
 
@@ -33,7 +33,7 @@ Agent 型（单个 AI 专家）
 ```
 <repo>/                             # 仓库根目录（安装时整体作为插件目录）
 ├── .codebuddy-plugin/plugin.json   # 插件清单：声明 1 个 agent 与 2 个 skill
-├── agents/jing-xiao-wu.md          # 唯一的 agent 定义（路由与回答档位）
+├── agents/jiang-xiao-shu.md       # 唯一的 agent 定义（路由与回答档位）
 ├── skills/                         # 每个子目录是一个可独立安装的技能
 │   ├── saig-spu-rag/               # 知识库检索：数命SPU/社区、SAIG 大赛、《武汉概览》本地 BM25 RAG
 │   └── wuhan-guide/                # 武汉导览：离线地图 + 行程卡片
@@ -44,14 +44,14 @@ Agent 型（单个 AI 专家）
 
 ## 安装
 
-把这个仓库整体作为插件目录安装，目录名保持 `jing-xiao-wu`（与 `.codebuddy-plugin/plugin.json`
+把这个仓库整体作为插件目录安装，目录名保持 `jiang-xiao-shu`（与 `.codebuddy-plugin/plugin.json`
 的 `name`、`agentName` 一致）。各宿主的插件根目录以自身文档为准，常见位置：
 
 ```bash
 # CodeBuddy 插件目录
-cp -R . "$HOME/.codebuddy/plugins/jing-xiao-wu"
+cp -R . "$HOME/.codebuddy/plugins/jiang-xiao-shu"
 # WorkBuddy marketplace 插件目录
-cp -R . "$HOME/.workbuddy/plugins/marketplaces/my-experts/plugins/jing-xiao-wu"
+cp -R . "$HOME/.workbuddy/plugins/marketplaces/my-experts/plugins/jiang-xiao-shu"
 ```
 
 `plugin.json` 里的 `agents` / `skills` 都是相对本目录的路径，宿主加载插件后按清单自动发现
@@ -82,7 +82,7 @@ WorkBuddy 的专家包就是插件目录本身的 zip：**zip 根目录下直接
 不要多套一层文件夹，也不要带 `.DS_Store`、`__MACOSX`。用脚本打包可自动完成这些约定：
 
 ```bash
-python3 tools/pack_expert.py            # → dist/jing-xiao-wu-<version>.zip
+python3 tools/pack_expert.py            # → dist/jiang-xiao-shu-<version>.zip
 python3 tools/pack_expert.py --list     # 只列出将被打包的文件
 python3 tools/pack_expert.py --out /tmp/x.zip
 ```

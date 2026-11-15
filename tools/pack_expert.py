@@ -7,7 +7,7 @@ WorkBuddy 的专家包就是「插件目录」本身：zip 根目录下必须有
 `.codebuddy-plugin/plugin.json`，它与 `agents/`、`skills/`、`avatars/` 平级，
 安装后落到 `plugins/marketplaces/<marketplace>/plugins/<name>/`。
 
-    python3 tools/pack_expert.py                 # 产出 dist/jing-xiao-wu-<version>.zip
+    python3 tools/pack_expert.py                 # 产出 dist/jiang-xiao-shu-<version>.zip
     python3 tools/pack_expert.py --out /tmp/x.zip
     python3 tools/pack_expert.py --list          # 只打印将被打包的文件
 

@@ -42,7 +42,7 @@ MAP_TEMPLATE = ROOT / "skills" / "wuhan-guide" / "assets" / "wuhan-guide-map.htm
 REPORT_DEFAULT = ROOT / "tools" / "perf" / "baseline.json"
 
 DOC_FILES = (
-    "agents/jing-xiao-wu.md",
+    "agents/jiang-xiao-shu.md",
     "skills/wuhan-guide/SKILL.md",
     "skills/saig-spu-rag/SKILL.md",
     "README.md",
