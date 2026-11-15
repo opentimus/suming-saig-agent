@@ -8,6 +8,9 @@
     python3 query_route.py --days 3      # 3 日游，自动推导为 G1 G2 G3
     python3 query_route.py --find 黄鹤楼  # 按景点名反查所属线路
     python3 query_route.py --all         # 导出全部 9 条线路
+    python3 query_route.py --days 2 --exclude 黄鹤楼 --hours 8   # 排除景点并按时长裁剪
+    python3 query_route.py G1 G2 --replace 东湖=汉街             # 线路内替换景点
+    python3 query_route.py --all --area 汉口 --theme 夜景         # 按片区/主题筛选
 
 与导览模式（show_map.py）共用同一份模板、同一个 ASCII 文件名 wuhan-guide.html，
 后者同名覆盖；全景导览零接口，本模式一次接口调用同时产出 stdout 文字行程单与单页。
@@ -322,6 +325,128 @@ def find_by_spot(records: list, keyword: str) -> list:
     if not hits:
         raise SystemExit(f"未找到名称包含「{keyword}」的景点")
     return sort_codes({r["code"] for r in hits})
+
+
+def split_terms(raw_values) -> list:
+    """把可重复、逗号/顿号/空格分隔的参数展开为去重关键词（保持顺序）。"""
+    terms = []
+    for raw in raw_values or []:
+        for part in re.split(r"[,，、\s]+", raw or ""):
+            token = part.strip()
+            if token and token not in terms:
+                terms.append(token)
+    return terms
+
+
+def code_of_token(token: str):
+    """把 G1/g1/线路名 解析为代号；不是代号时返回 None。"""
+    token = (token or "").strip()
+    upper = token.upper()
+    if upper in ROUTE_NAMES:
+        return upper
+    return NAME_TO_CODE.get(token)
+
+
+def apply_replacements(records: list, all_records: list, specs) -> tuple:
+    """在所选记录内用数据集中已存在的景点替换旧景点，保持位置与所属代号。"""
+    messages = []
+    if not specs:
+        return records, messages
+    result = list(records)
+    for spec in specs:
+        if "=" not in (spec or ""):
+            messages.append(f"忽略无效 --replace「{spec}」，格式应为 旧=新")
+            continue
+        old, new = (s.strip() for s in spec.split("=", 1))
+        if not old or not new:
+            messages.append(f"忽略无效 --replace「{spec}」，格式应为 旧=新")
+            continue
+        new_rec = next((r for r in all_records if r["spot"] == new), None)
+        if new_rec is None:
+            new_rec = next((r for r in all_records if new in r["spot"]), None)
+        if new_rec is None:
+            messages.append(f"--replace 目标「{new}」不在线路数据中，已跳过")
+            continue
+        replaced = False
+        for i, r in enumerate(result):
+            if old in r["spot"]:
+                moved = dict(new_rec)
+                moved["code"] = r["code"]
+                moved["order"] = r["order"]
+                moved["idx"] = r["idx"]
+                result[i] = moved
+                replaced = True
+                break
+        if replaced:
+            messages.append(f"已将「{old}」替换为「{new_rec['spot']}」")
+        else:
+            messages.append(f"--replace 未找到被替换景点「{old}」，已跳过")
+    return result, messages
+
+
+def apply_excludes(codes: list, records: list, terms: list) -> tuple:
+    """按线路代号移除线路、按景点名子串剔除记录。"""
+    messages = []
+    if not terms:
+        return codes, records, messages
+    drop_codes, name_terms = set(), []
+    for term in terms:
+        code = code_of_token(term)
+        if code:
+            drop_codes.add(code)
+        else:
+            name_terms.append(term)
+    new_codes = [c for c in codes if c not in drop_codes]
+    for c in sorted(drop_codes):
+        if c in codes:
+            messages.append(f"已排除线路 {c} {ROUTE_NAMES[c]}")
+    new_records = records
+    if name_terms:
+        kept = [r for r in records if not any(t in r["spot"] for t in name_terms)]
+        removed = len(records) - len(kept)
+        if removed:
+            messages.append(f"已排除 {removed} 个景点（关键词：{'、'.join(name_terms)}）")
+        new_records = kept
+    return new_codes, new_records, messages
+
+
+def filter_records(records: list, areas: list, themes: list) -> tuple:
+    """按片区子串、主题（类型/景点/点评子串）筛选记录。"""
+    messages = []
+    out = list(records)
+    if areas:
+        out = [r for r in out if any(a in r["area"] for a in areas)]
+        messages.append(f"按片区筛选：{'、'.join(areas)}")
+    if themes:
+        out = [
+            r for r in out
+            if any(t in (r["spot"] + " " + r["kind"] + " " + r["review"]) for t in themes)
+        ]
+        messages.append(f"按主题筛选：{'、'.join(themes)}")
+    return out, messages
+
+
+def trim_by_hours(codes: list, records: list, budget: float) -> tuple:
+    """按规范顺序累计各线时长，保留预算内的线路（至少保留 1 条）。"""
+    messages = []
+    if budget <= 0:
+        messages.append(f"时长预算 {budget:g}h 非正，已忽略")
+        return codes, messages
+    kept, acc = [], 0.0
+    for pos, code in enumerate(codes):
+        group = [r for r in records if r["code"] == code]
+        if not group:
+            continue
+        line_hours = sum(parse_hours(r["duration"]) for r in group)
+        if kept and acc + line_hours > budget:
+            messages.append(
+                f"按约 {fmt_hours(budget)} 预算裁剪，保留 {len(kept)} 条线路，"
+                f"略去 {'、'.join(codes[pos:])}"
+            )
+            break
+        kept.append(code)
+        acc += line_hours
+    return (kept or codes[:1]), messages
 
 
 # ---------------------------------------------------------------------------
@@ -834,6 +959,41 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--find", metavar="景点", help="按景点名反查所属线路")
     parser.add_argument("--all", action="store_true", help="输出全部 9 条线路")
     parser.add_argument(
+        "--exclude",
+        action="append",
+        metavar="关键词",
+        help="排除线路代号（G1-G9/线路名）或景点名子串；可重复或逗号、顿号分隔",
+    )
+    parser.add_argument(
+        "--replace",
+        action="append",
+        metavar="旧=新",
+        help="在所选线路内用数据中已存在的景点替换旧景点；可重复，如 --replace 东湖=汉街",
+    )
+    parser.add_argument(
+        "--half",
+        action="store_true",
+        help="半天行程（等价 --hours 4）",
+    )
+    parser.add_argument(
+        "--hours",
+        type=float,
+        metavar="小时",
+        help="按线路累计时长裁剪到给定小时预算（至少保留一条线路）",
+    )
+    parser.add_argument(
+        "--area",
+        action="append",
+        metavar="片区",
+        help="按起止片区子串筛选，如 汉口；可重复或逗号分隔",
+    )
+    parser.add_argument(
+        "--theme",
+        action="append",
+        metavar="主题",
+        help="按类型/景点/点评子串筛选，如 夜景、美食、博物馆；可重复",
+    )
+    parser.add_argument(
         "--no-sort",
         action="store_true",
         help="不按「排序」字段重排景点，保留接口返回的原始顺序",
@@ -865,14 +1025,21 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     args = build_parser().parse_args()
 
-    if not (args.all or args.days is not None or args.find or args.codes):
+    has_selection = bool(args.all or args.days is not None or args.find or args.codes)
+    has_filter = bool(
+        args.exclude or args.replace or args.area or args.theme
+        or args.half or args.hours is not None
+    )
+    if not has_selection and not has_filter:
         raise SystemExit(
-            "用法: query_route.py G1 [G2 ...] | --days 3 | --find 黄鹤楼 | --all"
+            "用法: query_route.py G1 [G2 ...] | --days 3 | --find 黄鹤楼 | --all | "
+            "--exclude/--replace/--half/--hours/--area/--theme"
         )
 
     # 接口失败时 fetch_records() 抛 SystemExit：非零退出、不写也不覆盖页面，原始错误如实回显
     rows, total = fetch_records()
     records = normalize(rows)
+    all_records = list(records)   # 供 --replace 在全量数据中查找替换目标
 
     if args.all:
         target_codes, heading = list(ROUTE_CHAIN), "武汉全线路 "
@@ -884,8 +1051,55 @@ def main() -> None:
         names = "、".join(f"{c} {ROUTE_NAMES[c]}" for c in target_codes)
         print(f"景点「{keyword}」所属线路：{names}\n")
         heading = f"{keyword} 所属线路 "
-    else:
+    elif args.codes:
         target_codes, heading = parse_codes(args.codes), ""
+    elif args.half or args.hours is not None:
+        # 无基础选择但给了时长预算：默认一日主线再按预算裁剪
+        target_codes = codes_for_days(1)
+        heading = "武汉半日游 " if args.half else "武汉精选行程 "
+    else:
+        # 仅有筛选类参数：默认全线路再筛选
+        target_codes, heading = list(ROUTE_CHAIN), "武汉全线路 "
+
+    notices = []
+
+    # 1) 替换（在所选记录内用全量数据中已存在的景点替换旧景点）
+    records, msgs = apply_replacements(records, all_records, args.replace)
+    notices += msgs
+
+    # 2) 排除线路/景点
+    target_codes, records, msgs = apply_excludes(
+        target_codes, records, split_terms(args.exclude)
+    )
+    notices += msgs
+
+    # 3) 片区 / 主题筛选
+    records, msgs = filter_records(
+        records, split_terms(args.area), split_terms(args.theme)
+    )
+    notices += msgs
+
+    # 4) 剔除筛选后已无景点的线路
+    non_empty = [c for c in target_codes if any(r["code"] == c for r in records)]
+    dropped = [c for c in target_codes if c not in non_empty]
+    if dropped:
+        notices.append("以下线路筛选后无景点已移除：" + "、".join(dropped))
+    if not non_empty:
+        raise SystemExit(
+            "筛选/排除后没有剩余景点，请调整 --exclude/--area/--theme/--hours"
+        )
+    target_codes = non_empty
+
+    # 5) 时长预算裁剪
+    budget = 4.0 if args.half else None
+    if args.hours is not None:
+        budget = float(args.hours)
+    if budget is not None:
+        target_codes, msgs = trim_by_hours(target_codes, records, budget)
+        notices += msgs
+
+    for msg in notices:
+        print(f"提示：{msg}", file=sys.stderr)
 
     css, fragment = render_card_fragment(
         target_codes, records, heading,

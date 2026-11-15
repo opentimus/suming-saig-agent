@@ -43,6 +43,7 @@ allowed-tools: Bash(python3)
 | --- | --- |
 | 「武汉全景导览」「给我一张武汉全景地图」「武汉整体看看有哪些景点」「打开武汉导览地图」 | `map` |
 | 「推荐武汉 2 日游」「武汉玩一天怎么玩」「G1 和 G2 有哪些景点」「内东湖主线怎么玩」「黄鹤楼在哪条线」「2 日游加光谷」「--all 等价的全线路」 | `route` |
+| 「不去黄鹤楼」「把东湖换成汉街」「半天怎么玩」「3 小时」「从汉口出发」「想要夜景/美食/亲子」 | `route`（用 `--exclude/--replace/--hours/--area/--theme` 微调） |
 
 **不要**把以下情况接到本技能：
 
@@ -54,6 +55,21 @@ allowed-tools: Bash(python3)
 | 点到点导航、实时路况、具体交通走法 | 不在能力范围内，如实说明 |
 
 判断要点：要的是**可操作的地图视图**走 `map`；要的是**线路安排／行程单**走 `route`。两者同时出现时按用户主要诉求择一，不自动串联第二个脚本。
+
+## 其他规划需求：最小适配原则
+
+行程需求超出常见模式时，**优先用现有参数映射**；确需扩展时以现有脚本为基础做最小增量：
+
+| 需求示例 | 做法（向后兼容，不改抓取/渲染/模板） |
+| --- | --- |
+| 不去某景点 / 不要某条线 | `--exclude 黄鹤楼` 或 `--exclude G3` |
+| 把某景点换成另一个 | `--replace 东湖=汉街`（新景点须在线路数据中） |
+| 半天 / 3 小时 | `--half` 或 `--hours 3`（按线路累计时长裁剪，至少保留一条） |
+| 从汉口出发 / 想在某片区 | `--area 汉口` |
+| 想要夜景 / 美食 / 亲子 | `--theme 夜景`（匹配类型、景点、点评） |
+
+- 现有参数能表达时，不要新增代码；确需新增能力时，只加可选参数与客户端过滤/裁剪，复用 `fetch_records()`、`normalize()`、`render()`、`render_card_fragment()` 与模板链路，**禁止重写抓取、归一化、渲染或模板**。
+- 新参数默认关闭，缺省行为与现有完全一致。
 
 ## 工作流程
 
@@ -69,7 +85,7 @@ allowed-tools: Bash(python3)
    python3 skills/wuhan-guide/scripts/show_map.py --out <工作区绝对路径>/wuhan-guide.html
    ```
 
-2. 把脚本 **stdout 原样回显**：页面路径 + 一行说明 + 按片区编号景点清单。清单由脚本从 `assets/spots.json` 读取（编号＝数组顺序，片区按首次出现分组）；不凭记忆另写一份、不改动编号、不增删景点、不补写景点介绍。用户说「3 号是什么」「看看 12 号」时直接按本轮 stdout 回答名称与所属片区，不新增查询。
+2. 把脚本结果用**自然语言呈现**：页面路径 + 按片区编号景点清单。清单由脚本从 `assets/spots.json` 读取（编号＝数组顺序，片区按首次出现分组）；不凭记忆另写一份、不改动编号、不增删景点、不补写景点介绍。用户说「3 号是什么」「看看 12 号」时直接按本轮脚本结果回答名称与所属片区，不新增查询。
 
 3. 本模式是 L0 档位的**视图交付特例**：不调用任何知识库接口、不生成解说词、不生成行程单、不做来源标注、不追加「可继续深入」方向、不自动串联其他技能；给完路径与清单即结束本轮。
 
@@ -77,7 +93,7 @@ allowed-tools: Bash(python3)
 
 ### 模式 B · 线路查询（一次接口调用）
 
-1. 按 `references/route_codes.md` 的代号字典、衔接链与 N 日游推导表，把自然语言解析为代号数组（`--days N`、`--find <景点名>`、`--all` 或直接代号；保留 `--no-sort` 与 `--no-image` 排查能力）。
+1. 按 `references/route_codes.md` 的代号字典、衔接链与 N 日游推导表，把自然语言解析为代号数组（`--days N`、`--find <景点名>`、`--all` 或直接代号），再按需叠加 `--exclude/--replace/--half/--hours/--area/--theme` 微调（保留 `--no-sort` 与 `--no-image` 排查能力）。
 
 2. 执行**一次**脚本，同时取得 stdout 文字行程单与同一张单页：
 
@@ -86,6 +102,9 @@ allowed-tools: Bash(python3)
    python3 skills/wuhan-guide/scripts/query_route.py G1 G2 --out <工作区绝对路径>/wuhan-guide.html
    python3 skills/wuhan-guide/scripts/query_route.py --find 黄鹤楼 --out <工作区绝对路径>/wuhan-guide.html
    python3 skills/wuhan-guide/scripts/query_route.py --all --out <工作区绝对路径>/wuhan-guide.html
+   python3 skills/wuhan-guide/scripts/query_route.py --days 2 --exclude 黄鹤楼 --hours 8 --out <工作区绝对路径>/wuhan-guide.html
+   python3 skills/wuhan-guide/scripts/query_route.py G1 G2 --replace 东湖=汉街 --out <工作区绝对路径>/wuhan-guide.html
+   python3 skills/wuhan-guide/scripts/query_route.py --all --area 汉口 --theme 夜景 --out <工作区绝对路径>/wuhan-guide.html
    ```
 
    `--cards` 为兼容旧调用保留的空开关：合并后单页始终生成，可省略。省略 `--out` 时脚本写到当前工作目录下的 `wuhan-guide.html`，实际调用仍应显式传工作区绝对路径。
@@ -105,7 +124,7 @@ allowed-tools: Bash(python3)
 - 同一问题只落一个模式、最多一条 `Bash(python3)` 命令；不自动串联其他技能。
 - 产物固定为 `wuhan-guide.html`，两种模式同名幂等覆盖；先导览后线路时，后者覆盖前者为含行程卡片的版本，属预期行为，需向用户说明页面已更新。
 - 交付形态默认是**两个文件**：`wuhan-guide.html` + 同目录的 `wuhan-guide-map.jpg`（脚本自动写出）。向用户说明时点明两者需一起拷走/转发；确需单文件时加 `--inline-image`，底图会重新 base64 内联，代价是首屏解码变慢。
-- `map` 模式不做来源标注（无知识库来源）；`route` 模式按 `agents/jing-xiao-wu.md` 的输出规范标注来源并说明实时信息边界。
+- `map` 模式无知识库来源；`route` 模式按 `agents/jing-xiao-wu.md` 的输出规范自然呈现、不暴露内部引用，并说明实时信息边界。
 
 ## 回答约束
 
@@ -149,6 +168,6 @@ allowed-tools: Bash(python3)
 - `assets/wuhan-guide-map.jpg`：外置底图（1400×1592，JPEG q80，约 850KB）。由原 1920×2184 底图降采样重编码而来；改图后须同步模板 `<img class="map-art">` 的 `width`/`height`。
 - `scripts/guide_common.py`：唯一渲染契约与共享工具。令牌/块标记常量、`load_spots()`（校验名称唯一／坐标 0–100／线路合法）、`route_spots()`、`render_spots_html()`／`render_route_btns()`／`render_spots_json()`、`spots_digest()`、`load_template()`、`render_page()`（块替换 + 精确替换 + 临时文件 + `os.replace` 原子写）、`render_list()`／`preview_hint`／`page_digest`，两个入口共用。
 - `scripts/show_map.py`：导览模式薄入口，零网络、零接口，注入引导占位与 `map` 模式。
-- `scripts/query_route.py`：线路模式入口。保留 `fetch_records()`／`normalize()`／`build_thumbs()`／`render()` 与全套 CLI（`codes`／`--days`／`--find`／`--all`／`--no-sort`／`--no-image`／`--out`）；`render_card_fragment()` 只返回作用域化 CSS 与卡片片段（每条线路一个 `section.gc-route[data-route]`，标题为「Gx · 线路名」），交给 `guide_common.render_page()` 注入同一模板。图片默认并发预取后 base64 内联，单张内联失败则省略该图并给出占位说明，页面不产生任何外链请求；`--no-image` 可切换轻量模式。
+- `scripts/query_route.py`：线路模式入口。保留 `fetch_records()`／`normalize()`／`build_thumbs()`／`render()` 与全套 CLI（`codes`／`--days`／`--find`／`--all`／`--exclude`／`--replace`／`--half`／`--hours`／`--area`／`--theme`／`--no-sort`／`--no-image`／`--out`）；`render_card_fragment()` 只返回作用域化 CSS 与卡片片段（每条线路一个 `section.gc-route[data-route]`，标题为「Gx · 线路名」），交给 `guide_common.render_page()` 注入同一模板。图片默认并发预取后 base64 内联，单张内联失败则省略该图并给出占位说明，页面不产生任何外链请求；`--no-image` 可切换轻量模式。
 - `references/route_codes.md`：代号字典、衔接链、N 日游推导表、景点→代号速查；仅作零调用文字快答字典，不含接口 13 字段明细，不能替代接口数据。
 - `references/api_reference.md`：接口地址、请求体、响应结构、错误码与环境变量，排查调用问题时查阅。
